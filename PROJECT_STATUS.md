@@ -45,3 +45,29 @@ Step 6 - PrimeXBT MT5 read-only execution-agent connection.
 ## Blocked
 
 None.
+## Phase 3 — Broker Adapter Foundation
+
+### Checkpoint 3.1 — Normalized Broker Contract ? COMPLETE
+
+Completed:
+
+- Broker capability model
+- Normalized broker schemas
+- Broker type and account mode normalization
+- Asset class and market type normalization
+- Normalized instruments, quotes, candles, positions, and orders
+- Separation of normalized `symbol` from broker-native `broker_symbol`
+- Permanent abstract `BrokerAdapter` contract
+- Read-only execution safeguards
+- Broker adapter exception hierarchy
+- Automated broker contract tests
+
+Validation:
+
+- Broker contract tests: 7 passed
+- Full backend suite: 12 passed
+- Ruff: all checks passed
+
+Next:
+
+### Checkpoint 3.2 — Simulated Broker Adapter

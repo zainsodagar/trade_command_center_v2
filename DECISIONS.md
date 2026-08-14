@@ -37,3 +37,15 @@ AI modules may analyze markets and create proposed trade plans. They cannot bypa
 ## ADR-007: Instrument support
 
 The system supports all instruments exposed by connected PrimeXBT MT5 and Binance accounts. Broker symbol catalogues are loaded dynamically.
+
+## Broker Adapter Abstraction
+
+Decision: Trade Command Center core services must never communicate directly with PrimeXBT MT5, Binance, or another broker implementation.
+
+All broker integrations must implement the common `BrokerAdapter` contract and convert broker-native data into normalized Trade Command Center schemas.
+
+Normalized symbols and broker-native symbols are stored separately.
+
+Execution methods exist in the permanent interface but remain disabled unless explicitly implemented by an execution-capable adapter.
+
+This allows read-only connectivity, risk controls, simulated execution, PrimeXBT MT5, and Binance to share a common application architecture.

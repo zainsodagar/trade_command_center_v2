@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timezone
+﻿from datetime import UTC, datetime
 
 from fastapi import FastAPI
 
@@ -19,7 +19,7 @@ def health() -> dict[str, object]:
         "status": "ok",
         "app": settings.app_name,
         "environment": settings.app_env,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 

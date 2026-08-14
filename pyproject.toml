@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "trade-command-center-backend"
 version = "0.1.0"
 description = "FastAPI backend for Trade Command Center V2"

@@ -49,3 +49,19 @@ Normalized symbols and broker-native symbols are stored separately.
 Execution methods exist in the permanent interface but remain disabled unless explicitly implemented by an execution-capable adapter.
 
 This allows read-only connectivity, risk controls, simulated execution, PrimeXBT MT5, and Binance to share a common application architecture.
+
+## Broker Service Boundary
+
+Decision: FastAPI routes must not interact with concrete broker adapters directly.
+
+The broker application flow is:
+
+FastAPI -> BrokerService -> BrokerManager -> BrokerAdapter
+
+BrokerManager owns adapter registration and lookup by connection ID.
+
+BrokerService provides application-level broker operations and currently exposes read-only functionality only.
+
+Execution methods are intentionally not exposed through BrokerService or FastAPI during the broker foundation and read-only broker phases.
+
+The simulated broker is used to prove the architecture before introducing PrimeXBT MT5.

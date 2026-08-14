@@ -71,3 +71,64 @@ Validation:
 Next:
 
 ### Checkpoint 3.2 — Simulated Broker Adapter
+
+### Checkpoint 3.2 — Simulated Broker Integration ? COMPLETE
+
+Completed:
+
+- Production SimulatedBrokerAdapter
+- Multi-asset simulated instrument catalog
+- Forex, metals, energy, indices, and crypto coverage
+- Broker connection lifecycle handling
+- Dynamic instrument discovery and filtering
+- Normalized quotes
+- Normalized historical candles
+- Read-only positions and orders
+- Disconnected broker protection
+- BrokerManager central connection registry
+- BrokerService application layer
+- FastAPI broker API
+- Dynamic broker connection count in system status
+- HTTP error normalization
+- API-level execution safeguards
+
+Read-only API endpoints implemented:
+
+- GET /api/v1/brokers
+- POST /api/v1/brokers/simulated
+- GET /api/v1/brokers/{connection_id}/health
+- POST /api/v1/brokers/{connection_id}/connect
+- POST /api/v1/brokers/{connection_id}/disconnect
+- DELETE /api/v1/brokers/{connection_id}
+- GET /api/v1/brokers/{connection_id}/capabilities
+- GET /api/v1/brokers/{connection_id}/account
+- GET /api/v1/brokers/{connection_id}/instruments
+- GET /api/v1/brokers/{connection_id}/instrument
+- GET /api/v1/brokers/{connection_id}/quote
+- GET /api/v1/brokers/{connection_id}/candles
+- GET /api/v1/brokers/{connection_id}/positions
+- GET /api/v1/brokers/{connection_id}/orders
+
+Safety:
+
+- No buy endpoint
+- No sell endpoint
+- No order placement endpoint
+- No trade execution endpoint
+- Simulated broker remains read-only
+- execution_enabled remains false
+- live_trading_enabled remains false
+
+Validation:
+
+- Full backend suite: 51 passed
+- Ruff: all checks passed
+- One known non-blocking Starlette TestClient/httpx deprecation warning remains
+
+### Phase 3 — Broker Adapter Foundation ? COMPLETE
+
+Phase 3 now provides the permanent broker-independent foundation required for PrimeXBT MT5 and future Binance integration.
+
+Next:
+
+## Phase 4 — PrimeXBT MT5 Demo Read-Only

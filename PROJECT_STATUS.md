@@ -132,3 +132,47 @@ Phase 3 now provides the permanent broker-independent foundation required for Pr
 Next:
 
 ## Phase 4 � PrimeXBT MT5 Demo Read-Only
+
+## Phase 4 — PrimeXBT MT5 Demo Read-Only
+
+### Checkpoint 4.1 — Windows MT5 Agent Foundation ✅ COMPLETE
+
+Completed:
+
+- Independent Windows execution-agent Python package
+- Independent execution-agent virtual environment
+- Independent dependency requirements and lock file
+- Agent configuration layer
+- MT5 status model
+- FastAPI execution-agent application
+- Local-only agent listener on 127.0.0.1:8765
+- Health endpoint
+- Agent status endpoint
+- MT5 status endpoint
+- Automated execution-agent tests
+- PowerShell agent startup script
+- PowerShell execution-agent test script
+- Runtime verification through Swagger and PowerShell
+
+Current safety state:
+
+- MT5 enabled: false
+- MT5 terminal available: false
+- MT5 initialized: false
+- Broker account logged in: false
+- Execution enabled: false
+- Live trading enabled: false
+
+No order placement, buy, sell, modify-order, cancel-order,
+close-position, or execution endpoints exist.
+
+Validation:
+
+- Execution-agent tests: 5 passed
+- Backend tests: 51 passed
+- Ruff: all checks passed
+- Live local HTTP runtime verified on 127.0.0.1:8765
+
+Next:
+
+### Checkpoint 4.2 — MetaTrader 5 Terminal Detection and Read-Only Initialization

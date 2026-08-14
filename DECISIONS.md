@@ -65,3 +65,26 @@ BrokerService provides application-level broker operations and currently exposes
 Execution methods are intentionally not exposed through BrokerService or FastAPI during the broker foundation and read-only broker phases.
 
 The simulated broker is used to prove the architecture before introducing PrimeXBT MT5.
+
+## Separate Windows MT5 Agent
+
+Decision: MetaTrader 5 integration must run behind a separate
+Windows execution-agent boundary rather than being imported directly
+inside the main FastAPI backend.
+
+Architecture:
+
+Backend -> Windows MT5 Agent -> MT5 Terminal -> PrimeXBT
+
+Reasons:
+
+- isolate Windows-specific MT5 dependencies
+- keep the main backend broker-independent
+- prevent broker terminal failures from directly affecting the backend
+- create an explicit security boundary before execution is introduced
+- allow the main backend and future mobile clients to remain platform-independent
+
+The agent initially binds only to 127.0.0.1.
+
+Checkpoint 4.1 contains no trading endpoints and defaults all execution
+and live-trading settings to false.

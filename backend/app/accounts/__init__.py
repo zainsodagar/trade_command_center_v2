@@ -1,0 +1,1 @@
+"""User and trading-account domain."""

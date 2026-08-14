@@ -1,0 +1,1 @@
+"""Trade-intent and execution-record domain."""

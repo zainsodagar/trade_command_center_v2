@@ -1,4 +1,4 @@
-﻿# Project Status
+# Project Status
 
 Last updated: 2026-08-14
 
@@ -8,34 +8,39 @@ Phase 1 - Clean project foundation
 
 ## Current checkpoint
 
-Step 2 - FastAPI backend environment
+Step 4 - Database foundation
 
 ## Completed
 
-- Clean V2 monorepo created.
-- Legacy project preserved as reference-only.
-- Backend Python virtual environment created.
-- FastAPI application created.
-- Environment-based configuration created.
-- Health endpoint created.
-- Safe system-status endpoint created.
-- Automated backend tests created.
-- Ruff linting configured.
-- Backend start/test PowerShell scripts created.
-- Execution is disabled by default.
-- Live trading is disabled by default.
+- Clean V2 monorepo created and committed.
+- FastAPI backend environment created and tested.
+- V2 repository pushed to GitHub.
+- SQLAlchemy database foundation added.
+- Alembic migration system added.
+- User model added.
+- Broker connection model added.
+- Trading account model added.
+- Risk profile model added.
+- Append-only audit event foundation added.
+- Execution record foundation added.
+- Broker credentials are represented only by `secret_ref`; raw broker secrets are not database fields.
+- Execution records include a unique `client_order_id` foundation for idempotency.
+- Local SQLite runtime database is excluded from Git.
+- Automated database structure/security tests added.
+- Execution remains disabled.
+- Live trading remains disabled.
 
 ## In progress
 
-- Local verification of Step 2.
+- Local Step 4 migration and test verification.
 
 ## Next checkpoint
 
-Step 3 - Connect the new repository to GitHub and establish protected project history.
+Step 5 - Broker adapter contracts and simulated read-only broker.
 
 After that:
 
-Step 4 - Database foundation and audit models.
+Step 6 - PrimeXBT MT5 read-only execution-agent connection.
 
 ## Blocked
 

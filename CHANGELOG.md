@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 ## Unreleased
 
@@ -15,3 +15,8 @@
 - Backend automated tests.
 - Ruff linting configuration.
 - Backend development scripts.
+- SQLAlchemy database foundation.
+- Alembic migrations.
+- User, broker connection, trading account, risk profile, audit event, and execution record models.
+- Database security tests preventing raw broker credential fields.
+- Unique execution `client_order_id` foundation for idempotency.

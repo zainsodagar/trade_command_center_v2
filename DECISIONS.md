@@ -1,4 +1,4 @@
-﻿# Architecture Decisions
+# Architecture Decisions
 
 ## ADR-001: Canonical project
 
@@ -88,3 +88,18 @@ The agent initially binds only to 127.0.0.1.
 
 Checkpoint 4.1 contains no trading endpoints and defaults all execution
 and live-trading settings to false.
+## MT5 Account Discovery Without Stored Credentials
+
+Decision: During PrimeXBT MT5 read-only integration, Trade Command Center inspects the account already authenticated inside the configured PXBT MT5 terminal.
+
+The application does not call mt5.login() and does not store the MT5 account password in source code, environment configuration, or database fields during this phase.
+
+The execution agent detects the account using account_info() only after successfully initializing the explicitly configured PXBT terminal.
+
+The account trade mode must be exposed so the application can distinguish demo, contest, real, and unknown accounts.
+
+During Phase 4, only demo-account read access is intended.
+
+The full MT5 login number is not exposed through the execution-agent API. A masked representation may be returned for operator identification.
+
+Broker or terminal permissions such as trade_allowed or trade_expert do not override Trade Command Center safety gates. TCC execution_enabled and live_trading_enabled remain independent controls and are both false during Phase 4.

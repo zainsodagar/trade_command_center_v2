@@ -45,9 +45,9 @@ Step 6 - PrimeXBT MT5 read-only execution-agent connection.
 ## Blocked
 
 None.
-## Phase 3 — Broker Adapter Foundation
+## Phase 3 ï¿½ Broker Adapter Foundation
 
-### Checkpoint 3.1 — Normalized Broker Contract ? COMPLETE
+### Checkpoint 3.1 ï¿½ Normalized Broker Contract ? COMPLETE
 
 Completed:
 
@@ -70,9 +70,9 @@ Validation:
 
 Next:
 
-### Checkpoint 3.2 — Simulated Broker Adapter
+### Checkpoint 3.2 ï¿½ Simulated Broker Adapter
 
-### Checkpoint 3.2 — Simulated Broker Integration ? COMPLETE
+### Checkpoint 3.2 ï¿½ Simulated Broker Integration ? COMPLETE
 
 Completed:
 
@@ -125,13 +125,13 @@ Validation:
 - Ruff: all checks passed
 - One known non-blocking Starlette TestClient/httpx deprecation warning remains
 
-### Phase 3 — Broker Adapter Foundation ? COMPLETE
+### Phase 3 ï¿½ Broker Adapter Foundation ? COMPLETE
 
 Phase 3 now provides the permanent broker-independent foundation required for PrimeXBT MT5 and future Binance integration.
 
 Next:
 
-## Phase 4 — PrimeXBT MT5 Demo Read-Only
+## Phase 4 ï¿½ PrimeXBT MT5 Demo Read-Only
 
 ## Phase 4 â€” PrimeXBT MT5 Demo Read-Only
 
@@ -175,4 +175,58 @@ Validation:
 
 Next:
 
-### Checkpoint 4.2 â€” MetaTrader 5 Terminal Detection and Read-Only Initialization
+### Checkpoint 4.2 â€” MT5 Terminal Detection and Read-Only Initialization âœ… COMPLETE
+
+Completed:
+
+- MetaTrader5 Python package installed only in the Windows execution-agent environment
+- MetaTrader5 pinned at version 5.0.5735
+- PXBT MT5 terminal discovered explicitly
+- configured terminal:
+  C:\Program Files\PXBT Trading MT5 Terminal\terminal64.exe
+- MT5 terminal initialization through explicit terminal path
+- controlled MT5 shutdown after every probe
+- terminal version/build discovery
+- terminal connection-state discovery
+- PXBT company and terminal identity detection
+- existing logged-in MT5 account detection
+- demo/live/contest account-mode detection
+- masked account-login reporting
+- broker server, company, currency and leverage discovery
+- read-only MT5 status exposed through execution-agent API
+- automated account-aware MT5 status tests
+- live HTTP validation against PXBT MT5 demo terminal
+
+Validated PXBT environment:
+
+- terminal company: PXBT Trading Ltd
+- terminal: PXBT Trading MT5 Terminal
+- terminal build: 6090
+- account mode: demo
+- account server: PXBTTrading-1
+- account currency: USD
+- leverage: 100
+
+Safety state:
+
+- execution enabled: false
+- live trading enabled: false
+- no mt5.login() call
+- no order_send() call
+- no order_check() call
+- no order-placement API endpoints
+- no broker credentials stored in source
+- full MT5 account login is not exposed through the API
+- MT5 Python connection is shut down after each read-only probe
+
+Validation:
+
+- MT5 account-aware status tests: 6 passed
+- execution-agent tests: 11 passed
+- execution-agent Ruff: all checks passed
+- live /api/v1/mt5/status validation successful
+- live /api/v1/agent/status validation successful
+
+Next:
+
+### Checkpoint 4.3 â€” PrimeXBT MT5 Read-Only Market and Account Data

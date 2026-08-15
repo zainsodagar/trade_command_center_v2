@@ -18,6 +18,8 @@ class AgentSettings(BaseSettings):
     port: int = 8765
 
     mt5_enabled: bool = False
+    
+    mt5_terminal_path: str | None = None
 
     execution_enabled: bool = False
     live_trading_enabled: bool = False

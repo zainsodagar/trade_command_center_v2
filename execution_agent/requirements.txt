@@ -5,3 +5,4 @@ pydantic-settings
 pytest
 ruff
 httpx
+MetaTrader5==5.0.5735

@@ -3,8 +3,40 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
+from execution_agent.app.core.config import get_agent_settings
 from execution_agent.app.main import app
 
+
+@pytest.fixture(autouse=True)
+def reset_agent_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
+    monkeypatch.setenv(
+        "TCC_AGENT_MT5_ENABLED",
+        "false",
+    )
+
+    monkeypatch.setenv(
+        "TCC_AGENT_EXECUTION_ENABLED",
+        "false",
+    )
+
+    monkeypatch.setenv(
+        "TCC_AGENT_LIVE_TRADING_ENABLED",
+        "false",
+    )
+
+    monkeypatch.delenv(
+        "TCC_AGENT_MT5_TERMINAL_PATH",
+        raising=False,
+    )
+
+    get_agent_settings.cache_clear()
+
+    try:
+        yield
+    finally:
+        get_agent_settings.cache_clear()
 
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:

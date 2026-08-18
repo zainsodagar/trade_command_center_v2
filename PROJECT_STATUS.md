@@ -327,3 +327,86 @@ No Trade Command Center execution capability has been introduced.
 Next:
 
 ## Phase 5 - Flutter Windows
+
+### Checkpoint 5.1 - Flutter Windows Foundation - COMPLETE
+
+Completed:
+
+- Flutter Windows project created under:
+  apps/trade_command_center
+- Flutter project name:
+  trade_command_center
+- Windows desktop platform generated
+- Windows x64 desktop target validated
+- Visual Studio Windows toolchain validated
+- Windows SDK validated
+- generated Flutter dependencies resolved successfully
+- default Flutter counter application removed
+- permanent Trade Command Center application entry point created
+- permanent application theme foundation created
+- Windows desktop application shell created
+- desktop NavigationRail foundation created
+- Dashboard destination created
+- Markets destination created
+- Account destination created
+- Settings destination created
+- persistent DEMO indicator added
+- persistent READ ONLY indicator added
+- execution state shown as disabled
+- no broker credentials stored in Flutter
+- no execution functionality introduced
+- no broker API connectivity introduced yet
+
+Current Flutter structure:
+
+    apps/trade_command_center/
+        lib/
+            main.dart
+            app/
+                app.dart
+                app_theme.dart
+            features/
+                shell/
+                    presentation/
+                        app_shell.dart
+        test/
+            widget_test.dart
+        windows/
+        pubspec.yaml
+
+Validated desktop behavior:
+
+- application launches successfully on Windows
+- application remains stable while running
+- Dashboard navigation works
+- Markets navigation works
+- Account navigation works
+- Settings navigation works
+- DEMO state remains visually visible
+- READ ONLY state remains visually visible
+
+Validation:
+
+- Flutter version: 3.44.7
+- Dart version: 3.12.2
+- flutter analyze: no issues
+- flutter tests: 2 passed
+- Windows release build: successful
+- Windows debug build: successful
+- Windows runtime validation: successful
+- release executable generated:
+  trade_command_center.exe
+
+Safety boundary:
+
+- Flutter contains no broker execution code
+- Flutter contains no MT5 dependency
+- Flutter does not communicate directly with MT5
+- Flutter contains no broker credentials
+- execution remains disabled
+- live trading remains disabled
+- Phase 4 execution-agent safety boundary remains unchanged
+
+Next:
+
+### Checkpoint 5.2 - Desktop Application Structure and Navigation

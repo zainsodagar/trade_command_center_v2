@@ -103,3 +103,69 @@ During Phase 4, only demo-account read access is intended.
 The full MT5 login number is not exposed through the execution-agent API. A masked representation may be returned for operator identification.
 
 Broker or terminal permissions such as trade_allowed or trade_expert do not override Trade Command Center safety gates. TCC execution_enabled and live_trading_enabled remain independent controls and are both false during Phase 4.
+
+## MT5 Historical Data and Implicit Symbol Selection
+
+Decision: Trade Command Center must not explicitly call
+`mt5.symbol_select()` during the Phase 4 read-only integration.
+
+Historical-rate requests use `copy_rates_from_pos()` against the
+broker-native symbol.
+
+PXBT MT5 has been observed to internally change a symbol from
+`selected=false` to `selected=true` when historical rates are loaded,
+even though Trade Command Center did not call `symbol_select()`.
+
+The execution agent therefore records symbol state before and after
+historical retrieval.
+
+It does not attempt to restore the original selection state because
+calling `symbol_select(..., False)` would itself introduce an explicit
+terminal-state mutation.
+
+Instrument selection and visibility are not treated as indicators of
+tradability.
+
+Quote or candle availability is also not treated as proof that new
+orders are allowed.
+
+## MT5 Read-Only Account Data Boundary
+
+Decision: Detailed MT5 financial account state may be exposed by the
+Windows execution agent during Phase 4 only when:
+
+- MT5 integration is enabled
+- the authenticated account is a demo account
+- `execution_enabled=false`
+- `live_trading_enabled=false`
+
+Permitted read-only account data includes:
+
+- balance
+- credit
+- profit
+- equity
+- margin
+- free margin
+- margin level
+- margin call level
+- stop-out level
+- leverage
+- account currency
+- account mode
+- broker server
+- broker company
+- related read-only MT5 account metadata
+
+The internal MT5 login may remain available inside the execution agent
+for account identity validation.
+
+HTTP responses expose only the masked account login.
+
+The full MT5 login must not be returned by the account API.
+
+Broker-side values such as `trade_allowed` and `trade_expert` are
+informational only and cannot override Trade Command Center safety
+gates.
+
+These account-data permissions do not authorize trade execution.

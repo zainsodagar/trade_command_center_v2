@@ -229,4 +229,101 @@ Validation:
 
 Next:
 
-### Checkpoint 4.3 — PrimeXBT MT5 Read-Only Market and Account Data
+### Checkpoint 4.3 - PrimeXBT MT5 Read-Only Market and Account Data - COMPLETE
+
+Completed:
+
+- dynamic PXBT MT5 instrument discovery
+- 207 broker-native instruments discovered
+- read-only instrument catalogue API
+- read-only quote API
+- read-only OHLC/candle API
+- detailed read-only account API
+- controlled candle timeframes:
+  M1, M5, M15, M30, H1, H4, D1
+- maximum candle request count limited to 1000
+- account balance, equity, profit, credit and margin reporting
+- margin call and stop-out reporting
+- leverage, currency and account metadata reporting
+- masked account login exposed through HTTP
+- full MT5 login excluded from HTTP responses
+- live PXBT demo validation completed
+
+Validated PXBT instrument catalogue:
+
+- total instruments: 207
+- Forex: 99
+- Commodities: 36
+- Crypto: 35
+- Indices: 17
+- Shares: 16
+- reference symbols: 4
+- new-order-allowed symbols: 202
+- new-order-disabled symbols: 5
+- TONUSDT detected as close-only
+- BTCUSD detected as a disabled reference symbol that can still
+  provide read-only quote and candle data
+
+Historical-data behavior:
+
+- Trade Command Center never calls mt5.symbol_select()
+- historical data is retrieved using copy_rates_from_pos()
+- PXBT MT5 may internally change a symbol from
+  selected=false to selected=true while loading history
+- candle responses record selected_before and selected_after
+- visible_before and visible_after are also recorded
+- Trade Command Center does not attempt to restore selection because
+  doing so would itself mutate terminal state
+- candle availability does not imply tradability
+- quote availability does not imply tradability
+- data availability does not imply freshness
+
+Validated PXBT demo account:
+
+- account mode: demo
+- server: PXBTTrading-1
+- company: PXBT Trading Ltd
+- currency: USD
+- leverage: 100
+- masked login exposed: yes
+- full login exposed: no
+
+Safety state:
+
+- execution enabled: false
+- live trading enabled: false
+- no mt5.login() call
+- no explicit mt5.symbol_select() call
+- no mt5.order_send() call
+- no mt5.order_check() call
+- no order-placement API endpoints
+- no broker credentials stored in source
+- demo-account read access only
+- MT5 Python connection is shut down after controlled probes
+
+Validation:
+
+- execution-agent tests: 80 passed
+- backend tests: 51 passed
+- total regression tests: 131 passed
+- execution-agent Ruff: all checks passed
+- backend Ruff: all checks passed
+- git diff --check: clean
+- forbidden MT5-call search: clean
+- live instrument endpoint validation: successful
+- live quote endpoint validation: successful
+- live candle endpoint validation: successful
+- live account endpoint validation: successful
+- live agent safety-state validation: successful
+
+## Phase 4 - PrimeXBT MT5 Demo Read-Only - COMPLETE
+
+Phase 4 now provides a controlled Windows execution-agent boundary
+for read-only PXBT MT5 terminal status, dynamic instruments, quotes,
+historical candles and detailed demo-account data.
+
+No Trade Command Center execution capability has been introduced.
+
+Next:
+
+## Phase 5 - Flutter Windows

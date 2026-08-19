@@ -1,14 +1,14 @@
 # Project Status
 
-Last updated: 2026-08-14
+Last updated: 2026-08-20
 
 ## Current phase
 
-Phase 1 - Clean project foundation
+Phase 5 - Flutter Windows
 
 ## Current checkpoint
 
-Step 4 - Database foundation
+Checkpoint 5.3 - Backend and Agent API Client - COMPLETE
 
 ## Completed
 
@@ -32,15 +32,15 @@ Step 4 - Database foundation
 
 ## In progress
 
-- Local Step 4 migration and test verification.
+- Preparing the next Flutter read-only market-data checkpoint.
 
 ## Next checkpoint
 
-Step 5 - Broker adapter contracts and simulated read-only broker.
+Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI.
 
 After that:
 
-Step 6 - PrimeXBT MT5 read-only execution-agent connection.
+Checkpoint 5.5 - Quotes and Historical Candles UI.
 
 ## Blocked
 
@@ -519,4 +519,211 @@ Safety boundary:
 
 Next:
 
-### Checkpoint 5.3 - Backend and Agent API Client
+### Checkpoint 5.3 - Backend and Agent API Client - COMPLETE
+
+Completed:
+
+- Flutter HTTP dependency added using `http 1.6.0`
+- permanent API configuration layer added
+- backend base URL configurable through:
+  `TCC_BACKEND_BASE_URL`
+- execution-agent base URL configurable through:
+  `TCC_AGENT_BASE_URL`
+- safe localhost defaults retained for Windows development
+- permanent API endpoint constants added
+- GET-only HTTP transport implemented
+- HTTP transport supports:
+  - JSON object responses
+  - JSON list responses
+  - empty successful responses
+  - FastAPI error detail extraction
+  - invalid JSON detection
+  - connection-error handling
+  - request timeout handling
+- reusable `ApiException` model added
+- typed backend system-status model added
+- typed execution-agent status model added
+- detailed typed MT5 status model added
+- strict required JSON-field validation added
+- strict nullable JSON-field validation added
+- date-time response validation added
+- `BackendApi` service added
+- `AgentApi` service added
+- detailed `getMt5Status()` support added
+- Flutter communicates only with the local FastAPI backend and
+  local Windows execution agent
+- Flutter does not communicate directly with MT5
+- standalone Dart live-status diagnostic probe added
+- real Dart-to-backend connectivity validated
+- real Dart-to-agent connectivity validated
+- real Dart-to-PXBT-MT5 read-only status validation completed
+
+Validated live PXBT demo status:
+
+- backend: online
+- agent: online
+- MT5 enabled: true
+- MT5 connected: true
+- MT5 account logged in: true
+- account mode: demo
+- account login exposed only in masked form
+- masked account login: ***7959
+- account server: PXBTTrading-1
+- account currency: USD
+- account leverage: 100
+- backend execution enabled: false
+- backend live trading enabled: false
+- agent execution enabled: false
+- agent live trading enabled: false
+- MT5 execution enabled: false
+- MT5 live trading enabled: false
+- Dart backend read-only safety state: true
+- Dart agent read-only safety state: true
+- detailed MT5 read-only safety state: true
+- detailed MT5 operational read-only state: true
+
+Dashboard integration:
+
+- live backend status connected to Dashboard
+- live Windows execution-agent status connected to Dashboard
+- live PXBT MT5 demo status connected to Dashboard
+- Dashboard networking isolated behind `DashboardStatusService`
+- Dashboard presentation does not perform direct HTTP requests
+- `DashboardStatus` aggregate safety model added
+- `DashboardStatusLoader` abstraction added
+- safe dependency injection added for automated widget tests
+- Dashboard supports initial loading state
+- Dashboard supports connected read-only-safe state
+- Dashboard supports initial connection-error state
+- Dashboard supports explicit unsafe state
+- Dashboard supports manual refresh
+- failed refresh preserves the last successfully loaded status
+- any unsafe backend, agent, or MT5 layer makes the aggregate
+  Dashboard state unsafe
+- non-demo MT5 account is treated as not operational read-only
+- disconnected MT5 is treated as not operational read-only
+- persistent DEMO indicator remains visible
+- persistent READ ONLY indicator remains visible
+- execution state remains visibly disabled
+- masked account login displayed
+- account server displayed
+- account currency displayed
+- account leverage displayed
+- live-trading state displayed
+- read-only safety state displayed
+
+Automated Flutter test coverage:
+
+- GET-only API transport tests: 7
+- backend and agent status service tests: 6
+- detailed MT5 status API tests: 3
+- Dashboard aggregate safety tests: 5
+- Dashboard state widget tests: 6
+- application shell and responsive navigation tests: 7
+- total Flutter tests: 34 passed
+
+Dashboard widget states verified:
+
+- loading
+- connected read-only safe
+- initial connection failure
+- unsafe execution state
+- successful manual refresh
+- failed-refresh fallback preserving last known good status
+
+Windows runtime validation:
+
+- Windows desktop application launches successfully
+- real local backend connectivity successful
+- real local execution-agent connectivity successful
+- real PXBT MT5 demo status displayed
+- Dashboard displays:
+  - Backend: Online
+  - MT5 Agent: Connected
+  - Account Mode: DEMO
+  - Execution: Disabled
+  - Login: ***7959
+  - Server: PXBTTrading-1
+  - Currency: USD
+  - Leverage: 1:100
+  - Live Trading: Disabled
+  - Safety: Read-only safe
+- Dashboard refresh works against live services
+- Dashboard navigation remains operational
+- Markets navigation remains operational
+- Account navigation remains operational
+- Settings navigation remains operational
+- returning to Dashboard preserves the real connected status
+- DEMO remains visible across navigation
+- READ ONLY remains visible across navigation
+- no runtime layout overflow observed
+
+Validation:
+
+- Flutter version: 3.44.7
+- Dart version: 3.12.2
+- dart format: successful
+- flutter analyze: no issues
+- Flutter tests: 34 passed
+- Windows release build: successful
+- release executable generated:
+  `trade_command_center.exe`
+- real Dart backend status probe: successful
+- real Dart execution-agent status probe: successful
+- real Dart detailed MT5 status probe: successful
+- `DART READ-ONLY API CLIENT CONFIRMED`
+- `DART DETAILED MT5 READ-ONLY STATUS CONFIRMED`
+- HTTP write-method source search: clean
+- prohibited execution-mechanism source search: clean
+- git diff --check: clean
+- Windows live runtime validation: successful
+
+Flutter network safety boundary:
+
+- Flutter HTTP transport exposes GET only
+- no POST implementation exists
+- no PUT implementation exists
+- no PATCH implementation exists
+- no DELETE implementation exists
+- no order API exists
+- no execution API exists
+- no buy control exists
+- no sell control exists
+- no order-entry control exists
+- no `mt5.login()` call exists in Flutter
+- no `mt5.symbol_select()` call exists in Flutter
+- no `mt5.order_send()` call exists in Flutter
+- no `mt5.order_check()` call exists in Flutter
+- Flutter contains no MetaTrader5 package dependency
+- Flutter does not communicate directly with MT5
+- Flutter contains no broker credentials
+- account login remains masked
+- execution remains disabled
+- live trading remains disabled
+- PrimeXBT MT5 real activation has not occurred
+- Phase 4 Windows execution-agent safety boundary remains unchanged
+
+## Checkpoint 5.3 - COMPLETE
+
+The Flutter Windows application now has a permanent, tested,
+GET-only networking layer for Trade Command Center backend,
+Windows execution-agent, and detailed PXBT MT5 demo status.
+
+The Windows Dashboard displays real local connectivity and
+read-only safety information while keeping execution and live
+trading disabled.
+
+No trading or order-execution capability has been introduced.
+
+Next:
+
+### Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI
+
+Planned:
+
+- connect Flutter to the existing dynamic MT5 instrument catalogue
+- preserve broker-native instrument discovery
+- support all PXBT asset groups rather than a gold-only workflow
+- add search and filtering
+- expose instrument tradability/read-only metadata clearly
+- maintain complete separation from execution functionality

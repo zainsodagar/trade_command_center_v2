@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../account/presentation/account_page.dart';
+import '../../dashboard/domain/dashboard_status_loader.dart';
 import '../../dashboard/presentation/dashboard_page.dart';
 import '../../markets/presentation/markets_page.dart';
 import '../../settings/presentation/settings_page.dart';
@@ -8,7 +9,9 @@ import 'widgets/app_mark.dart';
 import 'widgets/top_bar.dart';
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({this.dashboardStatusLoader, super.key});
+
+  final DashboardStatusLoader? dashboardStatusLoader;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -42,11 +45,11 @@ class _AppShellState extends State<AppShell> {
     ),
   ];
 
-  static const _pages = <Widget>[
-    DashboardPage(),
-    MarketsPage(),
-    AccountPage(),
-    SettingsPage(),
+  List<Widget> get _pages => [
+    DashboardPage(statusLoader: widget.dashboardStatusLoader),
+    const MarketsPage(),
+    const AccountPage(),
+    const SettingsPage(),
   ];
 
   @override

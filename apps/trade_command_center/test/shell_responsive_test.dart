@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trade_command_center/app/app.dart';
+import 'package:trade_command_center/features/shell/presentation/widgets/top_bar.dart';
+
+import 'support/dashboard_test_support.dart';
 
 void main() {
   testWidgets(
@@ -14,7 +17,11 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(const TradeCommandCenterApp());
+      await tester.pumpWidget(
+        TradeCommandCenterApp(
+          dashboardStatusLoader: buildSafeDashboardLoader(),
+        ),
+      );
 
       await tester.pumpAndSettle();
 
@@ -24,9 +31,18 @@ void main() {
 
       expect(rail.labelType, NavigationRailLabelType.all);
 
-      expect(find.text('DEMO'), findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(TopBar), matching: find.text('DEMO')),
+        findsOneWidget,
+      );
 
-      expect(find.text('READ ONLY'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(TopBar),
+          matching: find.text('READ ONLY'),
+        ),
+        findsOneWidget,
+      );
     },
   );
 
@@ -41,7 +57,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    await tester.pumpWidget(const TradeCommandCenterApp());
+    await tester.pumpWidget(
+      TradeCommandCenterApp(dashboardStatusLoader: buildSafeDashboardLoader()),
+    );
 
     await tester.pumpAndSettle();
 
@@ -59,8 +77,17 @@ void main() {
 
     expect(find.text('Settings'), findsOneWidget);
 
-    expect(find.text('DEMO'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(TopBar), matching: find.text('DEMO')),
+      findsOneWidget,
+    );
 
-    expect(find.text('READ ONLY'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(TopBar),
+        matching: find.text('READ ONLY'),
+      ),
+      findsOneWidget,
+    );
   });
 }

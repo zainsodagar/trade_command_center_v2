@@ -4,6 +4,7 @@ import 'package:trade_command_center/app/app.dart';
 import 'package:trade_command_center/features/shell/presentation/widgets/top_bar.dart';
 
 import 'support/dashboard_test_support.dart';
+import 'support/markets_test_support.dart';
 
 void main() {
   testWidgets(
@@ -20,6 +21,7 @@ void main() {
       await tester.pumpWidget(
         TradeCommandCenterApp(
           dashboardStatusLoader: buildSafeDashboardLoader(),
+          instrumentCatalogLoader: buildSafeInstrumentCatalogLoader(),
         ),
       );
 
@@ -58,7 +60,10 @@ void main() {
     });
 
     await tester.pumpWidget(
-      TradeCommandCenterApp(dashboardStatusLoader: buildSafeDashboardLoader()),
+      TradeCommandCenterApp(
+        dashboardStatusLoader: buildSafeDashboardLoader(),
+        instrumentCatalogLoader: buildSafeInstrumentCatalogLoader(),
+      ),
     );
 
     await tester.pumpAndSettle();

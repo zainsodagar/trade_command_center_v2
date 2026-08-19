@@ -3,15 +3,21 @@ import 'package:flutter/material.dart';
 import '../../account/presentation/account_page.dart';
 import '../../dashboard/domain/dashboard_status_loader.dart';
 import '../../dashboard/presentation/dashboard_page.dart';
+import '../../markets/domain/instrument_catalog_loader.dart';
 import '../../markets/presentation/markets_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import 'widgets/app_mark.dart';
 import 'widgets/top_bar.dart';
 
 class AppShell extends StatefulWidget {
-  const AppShell({this.dashboardStatusLoader, super.key});
+  const AppShell({
+    this.dashboardStatusLoader,
+    this.instrumentCatalogLoader,
+    super.key,
+  });
 
   final DashboardStatusLoader? dashboardStatusLoader;
+  final InstrumentCatalogLoader? instrumentCatalogLoader;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -21,6 +27,7 @@ class _AppShellState extends State<AppShell> {
   static const double _extendedRailBreakpoint = 1200;
 
   int _selectedIndex = 0;
+  bool _marketsActivated = false;
 
   static const _destinations = <NavigationRailDestination>[
     NavigationRailDestination(
@@ -47,7 +54,9 @@ class _AppShellState extends State<AppShell> {
 
   List<Widget> get _pages => [
     DashboardPage(statusLoader: widget.dashboardStatusLoader),
-    const MarketsPage(),
+    _marketsActivated
+        ? MarketsPage(catalogLoader: widget.instrumentCatalogLoader)
+        : const SizedBox.shrink(),
     const AccountPage(),
     const SettingsPage(),
   ];
@@ -78,6 +87,10 @@ class _AppShellState extends State<AppShell> {
                   onDestinationSelected: (index) {
                     setState(() {
                       _selectedIndex = index;
+
+                      if (index == 1) {
+                        _marketsActivated = true;
+                      }
                     });
                   },
                 ),

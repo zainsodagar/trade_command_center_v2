@@ -4,13 +4,17 @@ import 'package:trade_command_center/app/app.dart';
 import 'package:trade_command_center/features/shell/presentation/widgets/top_bar.dart';
 
 import 'support/dashboard_test_support.dart';
+import 'support/markets_test_support.dart';
 
 void main() {
   testWidgets('desktop shell starts on dashboard in demo read-only mode', (
     tester,
   ) async {
     await tester.pumpWidget(
-      TradeCommandCenterApp(dashboardStatusLoader: buildSafeDashboardLoader()),
+      TradeCommandCenterApp(
+        dashboardStatusLoader: buildSafeDashboardLoader(),
+        instrumentCatalogLoader: buildSafeInstrumentCatalogLoader(),
+      ),
     );
 
     await tester.pumpAndSettle();
@@ -45,7 +49,10 @@ void main() {
 
   testWidgets('navigation opens markets view', (tester) async {
     await tester.pumpWidget(
-      TradeCommandCenterApp(dashboardStatusLoader: buildSafeDashboardLoader()),
+      TradeCommandCenterApp(
+        dashboardStatusLoader: buildSafeDashboardLoader(),
+        instrumentCatalogLoader: buildSafeInstrumentCatalogLoader(),
+      ),
     );
 
     await tester.pumpAndSettle();
@@ -54,7 +61,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Market data connection pending'), findsOneWidget);
+    expect(find.text('Instrument browser'), findsOneWidget);
 
     expect(
       find.descendant(of: find.byType(TopBar), matching: find.text('DEMO')),
@@ -72,7 +79,10 @@ void main() {
 
   testWidgets('navigation opens account view', (tester) async {
     await tester.pumpWidget(
-      TradeCommandCenterApp(dashboardStatusLoader: buildSafeDashboardLoader()),
+      TradeCommandCenterApp(
+        dashboardStatusLoader: buildSafeDashboardLoader(),
+        instrumentCatalogLoader: buildSafeInstrumentCatalogLoader(),
+      ),
     );
 
     await tester.pumpAndSettle();
@@ -101,7 +111,10 @@ void main() {
 
   testWidgets('navigation opens settings view', (tester) async {
     await tester.pumpWidget(
-      TradeCommandCenterApp(dashboardStatusLoader: buildSafeDashboardLoader()),
+      TradeCommandCenterApp(
+        dashboardStatusLoader: buildSafeDashboardLoader(),
+        instrumentCatalogLoader: buildSafeInstrumentCatalogLoader(),
+      ),
     );
 
     await tester.pumpAndSettle();
@@ -132,6 +145,7 @@ void main() {
       await tester.pumpWidget(
         TradeCommandCenterApp(
           dashboardStatusLoader: buildSafeDashboardLoader(),
+          instrumentCatalogLoader: buildSafeInstrumentCatalogLoader(),
         ),
       );
 

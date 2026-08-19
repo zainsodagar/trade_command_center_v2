@@ -1,6 +1,7 @@
 import '../config/api_config.dart';
 import '../config/api_endpoints.dart';
 import '../models/agent_status.dart';
+import '../models/mt5_instrument.dart';
 import '../models/mt5_status.dart';
 import '../network/api_client.dart';
 import '../network/api_exception.dart';
@@ -50,6 +51,41 @@ class AgentApi {
     } on FormatException catch (error) {
       throw ApiException(
         'MT5 status response has an invalid schema',
+        uri: uri,
+        cause: error,
+      );
+    }
+  }
+
+  Future<List<Mt5Instrument>> getMt5Instruments() async {
+    final uri = ApiConfig.agentUri(ApiEndpoints.mt5Instruments);
+
+    final result = await _client.getJson(uri);
+
+    if (result is! List<dynamic>) {
+      throw ApiException(
+        'MT5 instruments response must be a JSON array',
+        uri: uri,
+      );
+    }
+
+    try {
+      final instruments = result
+          .map((item) {
+            if (item is! Map<String, dynamic>) {
+              throw const FormatException(
+                'MT5 instrument entry must be a JSON object.',
+              );
+            }
+
+            return Mt5Instrument.fromJson(item);
+          })
+          .toList(growable: false);
+
+      return List<Mt5Instrument>.unmodifiable(instruments);
+    } on FormatException catch (error) {
+      throw ApiException(
+        'MT5 instruments response has an invalid schema',
         uri: uri,
         cause: error,
       );

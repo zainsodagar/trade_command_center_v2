@@ -8,7 +8,7 @@ Phase 5 - Flutter Windows
 
 ## Current checkpoint
 
-Checkpoint 5.3 - Backend and Agent API Client - COMPLETE
+Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI - COMPLETE
 
 ## Completed
 
@@ -32,15 +32,15 @@ Checkpoint 5.3 - Backend and Agent API Client - COMPLETE
 
 ## In progress
 
-- Preparing the next Flutter read-only market-data checkpoint.
+- Preparing Checkpoint 5.5 - Quotes and Historical Candles UI.
 
 ## Next checkpoint
 
-Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI.
+Checkpoint 5.5 - Quotes and Historical Candles UI.
 
 After that:
 
-Checkpoint 5.5 - Quotes and Historical Candles UI.
+Phase 6 - Risk Engine.
 
 ## Blocked
 
@@ -519,7 +519,7 @@ Safety boundary:
 
 Next:
 
-### Checkpoint 5.3 - Backend and Agent API Client - COMPLETE
+### Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI - COMPLETE
 
 Completed:
 
@@ -717,13 +717,223 @@ No trading or order-execution capability has been introduced.
 
 Next:
 
-### Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI
+### Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI - COMPLETE
+
+Completed:
+
+- Flutter typed `Mt5Instrument` model added
+- all 20 broker-native MT5 instrument fields preserved
+- strict JSON schema validation retained
+- instrument safety metadata preserved:
+  - `trade_mode`
+  - `new_order_allowed`
+  - `reference_only`
+  - `visible`
+  - `selected`
+- derived read-only availability states added:
+  - Available
+  - Reference only
+  - Close only
+  - New orders disabled
+- `AgentApi.getMt5Instruments()` added
+- live agent response handled as the actual bare JSON array
+- no artificial object wrapper introduced
+- complete broker catalogue returned without truncation
+- malformed catalogue responses rejected safely
+- malformed instrument entries rejected safely
+
+Live PXBT MT5 catalogue validation:
+
+- total instruments: 207
+- Forex: 99
+- Commodities: 36
+- Crypto: 35
+- Indices: 17
+- Shares: 16
+- RefSymbols: 4
+- full trade mode: 202
+- disabled trade mode: 4
+- close-only trade mode: 1
+- new orders allowed: 202
+- new orders blocked: 5
+- reference-only instruments: 4
+- BTCUSD validated as:
+  - RefSymbols
+  - disabled
+  - reference only
+  - new orders blocked
+- TONUSDT validated as:
+  - Crypto
+  - close only
+  - new orders blocked
+- standalone Dart live catalogue probe completed successfully
+- `DART LIVE PXBT INSTRUMENT CATALOGUE CONFIRMED`
+
+Markets domain and data layer:
+
+- dynamic `InstrumentCatalog` added
+- `InstrumentCatalogLoader` abstraction added
+- `InstrumentCatalogService` added
+- Markets presentation does not call `AgentApi` directly
+- broker groups discovered dynamically from live catalogue
+- no fixed gold-only or single-asset workflow introduced
+- search supports:
+  - broker symbol
+  - description
+  - broker path
+  - broker group
+- dynamic broker-group filtering added
+- availability filtering added for:
+  - all
+  - new orders available
+  - new orders blocked
+  - reference only
+  - close only
+- catalogue summary counts added
+- unknown/future broker groups remain supported dynamically
+
+Markets Windows UI:
+
+- static Markets placeholder replaced with live read-only instrument browser
+- Markets catalogue loads lazily on first navigation
+- Dashboard startup is not forced to load the complete instrument catalogue
+- Markets state remains preserved after first activation
+- initial loading state added
+- initial connection-error state added
+- Retry action added
+- Refresh action added
+- failed refresh preserves last successful catalogue
+- live instrument-count metric cards added
+- dynamic broker-group chips added
+- availability-filter chips added
+- search field added
+- live filtered-result counts added
+- read-only instrument cards added
+- availability badges added
+- broker metadata displayed without execution actions
+- persistent DEMO indicator remains visible
+- persistent READ ONLY indicator remains visible
+- no Buy control added
+- no Sell control added
+- no Place Order control added
+- no Open Position control added
+- no execution control added
+
+Search-input defect correction:
+
+- original Markets search field incorrectly recreated
+  `TextEditingController` on every state rebuild
+- this caused text to appear in reverse order
+- cursor focus could disappear after Backspace
+- Markets now owns one persistent `TextEditingController`
+- controller created once in `initState`
+- controller disposed correctly in `dispose`
+- typing direction validated in Windows runtime
+- Backspace cursor behavior validated
+- continued typing after Backspace validated
+- dedicated regression test added
+
+Live Windows runtime validation:
+
+- Dashboard remains connected and read-only safe
+- Backend displays Online
+- MT5 Agent displays Connected
+- account mode displays DEMO
+- Execution displays Disabled
+- live trading remains Disabled
+- masked account login remains displayed
+- Markets displays 207 instruments
+- dynamic broker-group counts validated
+- BTCUSD displays Reference only
+- TONUSDT displays Close only
+- Blocked filter returns 5
+- Reference only filter returns 4
+- Close only filter returns 1
+- Refresh succeeds against real PXBT MT5 catalogue
+- search operates correctly
+- search Backspace/cursor behavior operates correctly
+- navigation preserves Markets state
+- returning to Dashboard preserves connected safety state
+- no runtime layout overflow observed
+- no execution controls observed
+
+Automated Flutter test coverage:
+
+- previous Checkpoint 5.3 suite: 34 tests
+- MT5 instrument model tests added
+- MT5 instrument API tests added
+- InstrumentCatalog domain tests added
+- InstrumentCatalogService tests added
+- Markets browser widget tests added
+- Markets search-input regression test added
+- application shell tests updated for safe Markets loader injection
+- total Flutter tests: 59 passed
+
+Final validation:
+
+- dart format: successful
+- flutter analyze: no issues
+- Flutter tests: 59 passed
+- Windows debug runtime: successful
+- Windows release build: successful
+- release executable generated:
+  `build\windows\x64\runner\Release\trade_command_center.exe`
+- real Dart instrument-catalogue probe: successful
+- HTTP write-method source search: clean
+- only GET HTTP transport remains
+- prohibited execution-mechanism source search: clean
+- execution-control UI source search: clean
+- git diff --check: clean
+- known Windows LF-to-CRLF warnings remain non-blocking
+
+Flutter safety boundary remains unchanged:
+
+- Flutter HTTP transport exposes GET only
+- no POST implementation exists
+- no PUT implementation exists
+- no PATCH implementation exists
+- no DELETE implementation exists
+- no order API exists
+- no execution API exists
+- no direct MetaTrader5 dependency exists in Flutter
+- no `mt5.login()` call exists in Flutter
+- no `mt5.symbol_select()` call exists in Flutter
+- no `mt5.order_send()` call exists in Flutter
+- no `mt5.order_check()` call exists in Flutter
+- Flutter communicates with MT5 only through the local Windows execution agent
+- Flutter contains no broker credentials
+- account login remains masked
+- execution remains disabled
+- live trading remains disabled
+- PrimeXBT real activation has not occurred
+
+## Checkpoint 5.4 - COMPLETE
+
+Trade Command Center Windows now contains a tested,
+broker-native, multi-asset PXBT MT5 instrument browser.
+
+The catalogue is dynamically sourced from the connected broker
+and currently exposes 207 instruments across Forex,
+Commodities, Crypto, Indices, Shares, and reference symbols.
+
+Search, broker-group filters, availability filters, refresh,
+error handling, and navigation-state preservation are operational.
+
+No trading or execution capability has been introduced.
+
+Next:
+
+### Checkpoint 5.5 - Quotes and Historical Candles UI
 
 Planned:
 
-- connect Flutter to the existing dynamic MT5 instrument catalogue
-- preserve broker-native instrument discovery
-- support all PXBT asset groups rather than a gold-only workflow
-- add search and filtering
-- expose instrument tradability/read-only metadata clearly
-- maintain complete separation from execution functionality
+- consume the existing read-only MT5 quote endpoint
+- consume the existing historical candle endpoint
+- add typed Dart quote models
+- add typed Dart candle models
+- add quote and candle service methods
+- add instrument-detail read-only market-data view
+- add timeframe selection
+- add historical price charting
+- maintain the existing GET-only Flutter network boundary
+- keep execution and live trading disabled

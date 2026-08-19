@@ -409,4 +409,114 @@ Safety boundary:
 
 Next:
 
-### Checkpoint 5.2 - Desktop Application Structure and Navigation
+### Checkpoint 5.2 - Desktop Application Structure and Navigation - COMPLETE
+
+Completed:
+
+- original Flutter desktop shell refactored from a monolithic file
+- app_shell.dart reduced from 451 lines to approximately 103 lines
+- permanent feature-based application structure introduced
+- reusable core presentation widgets extracted
+- Dashboard moved to its permanent feature module
+- Markets moved to its permanent feature module
+- Account moved to its permanent feature module
+- Settings moved to its permanent feature module
+- application mark extracted into a reusable shell widget
+- top application bar extracted into a reusable shell widget
+- DEMO and READ ONLY badges extracted into reusable shell widgets
+- NavigationRail remains the primary Windows desktop navigation
+- responsive NavigationRail behavior introduced
+- compact navigation used below the desktop extension breakpoint
+- extended navigation used on wide desktop windows
+- navigation state is preserved through IndexedStack
+- no networking dependency introduced
+- no broker execution functionality introduced
+
+Permanent presentation structure now includes:
+
+    lib/
+        core/
+            widgets/
+                empty_state.dart
+                metric_card.dart
+                page_frame.dart
+        features/
+            account/
+                presentation/
+                    account_page.dart
+            dashboard/
+                presentation/
+                    dashboard_page.dart
+            markets/
+                presentation/
+                    markets_page.dart
+            settings/
+                presentation/
+                    settings_page.dart
+            shell/
+                presentation/
+                    app_shell.dart
+                    widgets/
+                        app_mark.dart
+                        status_badge.dart
+                        top_bar.dart
+
+Responsive desktop behavior:
+
+- compact NavigationRail below 1200 logical pixels
+- extended NavigationRail at 1200 logical pixels and above
+- compact mode retains visible destination labels
+- extended mode displays icon-and-label desktop navigation
+- navigation remains operational during window resizing
+- Dashboard navigation validated
+- Markets navigation validated
+- Account navigation validated
+- Settings navigation validated
+- DEMO indicator remains permanently visible
+- READ ONLY indicator remains permanently visible
+- no runtime layout overflow observed during validation
+
+Test coverage:
+
+- application starts on Dashboard
+- DEMO state is verified
+- READ ONLY state is verified
+- execution disabled state is verified
+- Markets navigation is verified
+- Account navigation is verified
+- Settings navigation is verified
+- return navigation to Dashboard is verified
+- safety state remains visible across navigation
+- compact NavigationRail behavior is verified
+- extended NavigationRail behavior is verified
+
+Validation:
+
+- dart format: successful
+- flutter analyze: no issues
+- flutter tests: 7 passed
+- Windows release build: successful
+- Windows runtime compact-layout validation: successful
+- Windows runtime wide-layout validation: successful
+- responsive navigation runtime validation: successful
+- all four navigation destinations validated
+- git diff --check: clean
+- release executable generated:
+  trade_command_center.exe
+
+Safety boundary:
+
+- Flutter remains read-only
+- Flutter contains no order-entry controls
+- Flutter contains no execution API
+- Flutter contains no MT5 package dependency
+- Flutter does not communicate directly with MT5
+- Flutter contains no broker credentials
+- execution remains disabled
+- live trading remains disabled
+- PrimeXBT MT5 real activation has not occurred
+- Phase 4 execution-agent safety boundary remains unchanged
+
+Next:
+
+### Checkpoint 5.3 - Backend and Agent API Client

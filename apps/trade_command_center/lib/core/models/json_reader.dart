@@ -41,3 +41,21 @@ DateTime readRequiredDateTimeField(Map<String, dynamic> json, String key) {
 
   return parsed;
 }
+
+DateTime? readNullableDateTimeField(Map<String, dynamic> json, String key) {
+  final value = readNullableJsonField<String>(json, key);
+
+  if (value == null) {
+    return null;
+  }
+
+  final parsed = DateTime.tryParse(value);
+
+  if (parsed == null) {
+    throw FormatException(
+      'JSON field "$key" must contain a valid date-time or null.',
+    );
+  }
+
+  return parsed;
+}

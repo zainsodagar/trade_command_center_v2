@@ -5,6 +5,8 @@ import pytest
 
 from execution_agent.app.core.config import AgentSettings
 from execution_agent.app.mt5.client import (
+    CANDLE_HISTORY_SYNC_ATTEMPTS,
+    CANDLE_HISTORY_SYNC_DELAY_SECONDS,
     MAX_CANDLE_COUNT,
     MT5Client,
     MT5ClientError,
@@ -161,17 +163,11 @@ def test_candles_return_ohlc_series(
     assert result.candle_count == 2
     assert result.count_requested == 2
 
-    assert result.candles[0].bar_time < (
-        result.candles[1].bar_time
-    )
+    assert result.candles[0].bar_time < (result.candles[1].bar_time)
 
-    assert result.oldest_candle_time == (
-        result.candles[0].bar_time
-    )
+    assert result.oldest_candle_time == (result.candles[0].bar_time)
 
-    assert result.latest_candle_time == (
-        result.candles[-1].bar_time
-    )
+    assert result.latest_candle_time == (result.candles[-1].bar_time)
 
     assert result.candles[0].open == 1.13859
     assert result.candles[0].high == 1.13863
@@ -363,14 +359,10 @@ def test_rates_failure_is_reported(
     assert result.candle_count == 0
     assert result.candles == ()
 
-    assert result.unavailable_reason == (
-        "rates_unavailable"
-    )
+    assert result.unavailable_reason == ("rates_unavailable")
 
     assert result.error_code == -4
-    assert result.error_message == (
-        "Terminal: Not found"
-    )
+    assert result.error_message == ("Terminal: Not found")
 
     client.shutdown()
 
@@ -570,6 +562,7 @@ def test_probe_candles_always_shuts_down(
 
     assert result.latest_candle_time == expected_time
 
+
 def test_candle_history_can_change_mt5_selected_state(
     tmp_path,
     monkeypatch: pytest.MonkeyPatch,
@@ -641,5 +634,229 @@ def test_candle_history_can_change_mt5_selected_state(
     assert result.selected_after is True
 
     assert result.candle_count == 1
+
+    client.shutdown()
+
+
+def test_stale_history_retries_until_current(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = MT5Client(
+        settings=make_settings(tmp_path),
+    )
+
+    initialize_client(
+        client,
+        monkeypatch,
+    )
+
+    instrument = make_instrument(
+        symbol="GBPUSD",
+    )
+
+    monkeypatch.setattr(
+        client,
+        "get_instrument_snapshot",
+        lambda _symbol: instrument,
+    )
+
+    tick_time = 1_787_247_600
+    stale_rate_time = tick_time - 3600
+    fresh_rate_time = tick_time - 30
+
+    stale_rates = [
+        {
+            "time": stale_rate_time,
+            "open": 1.36200,
+            "high": 1.36210,
+            "low": 1.36190,
+            "close": 1.36205,
+            "tick_volume": 10,
+            "spread": 12,
+            "real_volume": 0,
+        },
+    ]
+
+    fresh_rates = [
+        {
+            "time": fresh_rate_time,
+            "open": 1.36210,
+            "high": 1.36230,
+            "low": 1.36200,
+            "close": 1.36220,
+            "tick_volume": 20,
+            "spread": 12,
+            "real_volume": 0,
+        },
+    ]
+
+    rate_calls = 0
+
+    def fake_copy_rates(*_args):
+        nonlocal rate_calls
+        rate_calls += 1
+
+        if rate_calls == 1:
+            return stale_rates
+
+        return fresh_rates
+
+    monkeypatch.setattr(
+        mt5,
+        "copy_rates_from_pos",
+        fake_copy_rates,
+    )
+
+    class Tick:
+        time = tick_time
+
+    monkeypatch.setattr(
+        mt5,
+        "symbol_info_tick",
+        lambda _symbol: Tick(),
+    )
+
+    class SymbolAfter:
+        visible = True
+        select = True
+
+    monkeypatch.setattr(
+        mt5,
+        "symbol_info",
+        lambda _symbol: SymbolAfter(),
+    )
+
+    sleep_calls: list[float] = []
+
+    monkeypatch.setattr(
+        "execution_agent.app.mt5.client.time.sleep",
+        lambda seconds: sleep_calls.append(seconds),
+    )
+
+    result = client.get_candle_series_snapshot(
+        "GBPUSD",
+        "M1",
+        1,
+    )
+
+    assert result.candles_available is True
+    assert result.candle_count == 1
+    assert result.unavailable_reason is None
+
+    assert result.latest_candle_time == (
+        datetime.fromtimestamp(
+            fresh_rate_time,
+            tz=UTC,
+        )
+    )
+
+    assert rate_calls == 2
+
+    assert sleep_calls == [
+        CANDLE_HISTORY_SYNC_DELAY_SECONDS,
+    ]
+
+    client.shutdown()
+
+
+def test_history_still_stale_after_retries_is_unavailable(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = MT5Client(
+        settings=make_settings(tmp_path),
+    )
+
+    initialize_client(
+        client,
+        monkeypatch,
+    )
+
+    instrument = make_instrument(
+        symbol="GBPUSD",
+    )
+
+    monkeypatch.setattr(
+        client,
+        "get_instrument_snapshot",
+        lambda _symbol: instrument,
+    )
+
+    tick_time = 1_787_247_600
+    stale_rate_time = tick_time - 86400
+
+    stale_rates = [
+        {
+            "time": stale_rate_time,
+            "open": 1.36000,
+            "high": 1.36010,
+            "low": 1.35990,
+            "close": 1.36005,
+            "tick_volume": 10,
+            "spread": 12,
+            "real_volume": 0,
+        },
+    ]
+
+    rate_calls = 0
+
+    def fake_copy_rates(*_args):
+        nonlocal rate_calls
+        rate_calls += 1
+        return stale_rates
+
+    monkeypatch.setattr(
+        mt5,
+        "copy_rates_from_pos",
+        fake_copy_rates,
+    )
+
+    class Tick:
+        time = tick_time
+
+    monkeypatch.setattr(
+        mt5,
+        "symbol_info_tick",
+        lambda _symbol: Tick(),
+    )
+
+    class SymbolAfter:
+        visible = True
+        select = True
+
+    monkeypatch.setattr(
+        mt5,
+        "symbol_info",
+        lambda _symbol: SymbolAfter(),
+    )
+
+    sleep_calls: list[float] = []
+
+    monkeypatch.setattr(
+        "execution_agent.app.mt5.client.time.sleep",
+        lambda seconds: sleep_calls.append(seconds),
+    )
+
+    result = client.get_candle_series_snapshot(
+        "GBPUSD",
+        "M1",
+        1,
+    )
+
+    assert result.candles_available is False
+    assert result.candle_count == 0
+    assert result.candles == ()
+
+    assert result.oldest_candle_time is None
+    assert result.latest_candle_time is None
+
+    assert result.unavailable_reason == "history_stale"
+    assert result.error_code is None
+    assert result.error_message is None
+
+    assert rate_calls == (CANDLE_HISTORY_SYNC_ATTEMPTS)
+
+    assert sleep_calls == [CANDLE_HISTORY_SYNC_DELAY_SECONDS] * (CANDLE_HISTORY_SYNC_ATTEMPTS - 1)
 
     client.shutdown()

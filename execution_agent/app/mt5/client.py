@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -162,7 +163,20 @@ MT5_TIMEFRAMES: dict[str, int] = {
     "D1": mt5.TIMEFRAME_D1,
 }
 
+MT5_TIMEFRAME_SECONDS: dict[str, int] = {
+    "M1": 60,
+    "M5": 5 * 60,
+    "M15": 15 * 60,
+    "M30": 30 * 60,
+    "H1": 60 * 60,
+    "H4": 4 * 60 * 60,
+    "D1": 24 * 60 * 60,
+}
+
 MAX_CANDLE_COUNT = 1000
+
+CANDLE_HISTORY_SYNC_ATTEMPTS = 4
+CANDLE_HISTORY_SYNC_DELAY_SECONDS = 1.0
 
 
 @dataclass(frozen=True)
@@ -739,12 +753,58 @@ class MT5Client:
                 f"1 and {MAX_CANDLE_COUNT}"
             )
 
-        rates = mt5.copy_rates_from_pos(
-            instrument.broker_symbol,
-            MT5_TIMEFRAMES[wanted_timeframe],
-            0,
-            count,
-        )
+        rates = None
+        history_stale = False
+
+        for attempt in range(
+            CANDLE_HISTORY_SYNC_ATTEMPTS
+        ):
+            rates = mt5.copy_rates_from_pos(
+                instrument.broker_symbol,
+                MT5_TIMEFRAMES[wanted_timeframe],
+                0,
+                count,
+            )
+
+            history_stale = False
+
+            if rates is not None and len(rates) > 0:
+                tick = mt5.symbol_info_tick(
+                    instrument.broker_symbol
+                )
+
+                if (
+                    tick is not None
+                    and tick.time > 0
+                ):
+                    latest_rate_time = max(
+                        int(rate["time"])
+                        for rate in rates
+                    )
+
+                    maximum_age_seconds = (
+                        MT5_TIMEFRAME_SECONDS[
+                            wanted_timeframe
+                        ]
+                        * 2
+                    )
+
+                    history_stale = (
+                        int(tick.time)
+                        - latest_rate_time
+                        > maximum_age_seconds
+                    )
+
+            if not history_stale:
+                break
+
+            if (
+                attempt + 1
+                < CANDLE_HISTORY_SYNC_ATTEMPTS
+            ):
+                time.sleep(
+                    CANDLE_HISTORY_SYNC_DELAY_SECONDS
+                )
 
         instrument_after = mt5.symbol_info(
             instrument.broker_symbol
@@ -761,6 +821,34 @@ class MT5Client:
             if instrument_after is not None
             else instrument.selected
         )
+
+        if history_stale:
+            return MT5CandleSeriesSnapshot(
+                broker_symbol=instrument.broker_symbol,
+                broker_path=instrument.broker_path,
+                broker_group=instrument.broker_group,
+                digits=instrument.digits,
+                point=instrument.point,
+                trade_mode=instrument.trade_mode,
+                new_order_allowed=(
+                    instrument.new_order_allowed
+                ),
+                reference_only=instrument.reference_only,
+                visible_before=instrument.visible,
+                selected_before=instrument.selected,
+                visible_after=visible_after,
+                selected_after=selected_after,
+                timeframe=wanted_timeframe,
+                count_requested=count,
+                candles_available=False,
+                candle_count=0,
+                oldest_candle_time=None,
+                latest_candle_time=None,
+                candles=(),
+                unavailable_reason="history_stale",
+                error_code=None,
+                error_message=None,
+            )
 
         if rates is None:
             error_code, error_message = mt5.last_error()

@@ -4,11 +4,11 @@ Last updated: 2026-08-20
 
 ## Current phase
 
-Phase 5 - Flutter Windows
+Phase 5 - Flutter Windows - COMPLETE
 
 ## Current checkpoint
 
-Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI - COMPLETE
+Checkpoint 5.5 - Quotes and Historical Candles UI - COMPLETE
 
 ## Completed
 
@@ -32,13 +32,9 @@ Checkpoint 5.4 - Instrument Browser and Read-Only Market Data UI - COMPLETE
 
 ## In progress
 
-- Preparing Checkpoint 5.5 - Quotes and Historical Candles UI.
+- Final repository closure for completed Phase 5 Flutter Windows work.
 
 ## Next checkpoint
-
-Checkpoint 5.5 - Quotes and Historical Candles UI.
-
-After that:
 
 Phase 6 - Risk Engine.
 
@@ -923,17 +919,167 @@ No trading or execution capability has been introduced.
 
 Next:
 
-### Checkpoint 5.5 - Quotes and Historical Candles UI
+### Checkpoint 5.5 - Quotes and Historical Candles UI - COMPLETE
 
-Planned:
+Completed:
 
-- consume the existing read-only MT5 quote endpoint
-- consume the existing historical candle endpoint
-- add typed Dart quote models
-- add typed Dart candle models
-- add quote and candle service methods
-- add instrument-detail read-only market-data view
-- add timeframe selection
-- add historical price charting
-- maintain the existing GET-only Flutter network boundary
-- keep execution and live trading disabled
+- typed `Mt5Quote` model added
+- typed `Mt5Candle` model added
+- typed `Mt5CandleSeries` model added
+- nullable date-time JSON parsing support added
+- strict quote and candle schema validation retained
+- `AgentApi.getMt5Quote()` added
+- `AgentApi.getMt5Candles()` added
+- all Flutter market-data networking remains GET-only
+- `MarketDataLoader` abstraction added
+- `MarketDataService` added
+- Markets presentation remains separated from direct HTTP transport
+- standalone live MT5 market-data Dart probe added
+- live PXBT quote parsing validated
+- live PXBT candle parsing validated
+- `history_stale` remains a safe non-data state rather than being
+  presented as valid candle history
+
+Read-only instrument market-data UI:
+
+- instrument cards are selectable
+- selected instrument state is visually indicated
+- selecting an instrument loads:
+  - live read-only quote
+  - 100 historical candles
+- initial historical timeframe is M1
+- supported timeframe controls:
+  - M1
+  - M5
+  - M15
+  - M30
+  - H1
+  - H4
+  - D1
+- changing timeframe reloads candles only
+- changing timeframe does not unnecessarily reload the quote
+- quote values displayed:
+  - Bid
+  - Ask
+  - Spread
+  - Spread Points
+  - Tick Time
+  - Quote Status
+- historical values displayed:
+  - Timeframe
+  - Candle Count
+  - Oldest Candle
+  - Latest Candle
+  - History Status
+- unavailable quote/history states remain explicit
+- stale history does not display stale candles as valid data
+
+Historical charting:
+
+- dependency-free Flutter candlestick chart added
+- chart implemented with `CustomPainter`
+- OHLC wick and candle-body rendering added
+- bullish and bearish candle rendering added
+- price-grid labels added
+- chart uses broker-native instrument digits
+- first and latest candle time labels added
+- safe empty-history chart state added
+- `history_stale` renders the safe empty-history state
+- chart widget automated tests added
+
+Instrument/timeframe state correction:
+
+- an instrument-selection regression was found during live Windows testing
+- previously, selecting a second instrument inherited the timeframe
+  chosen for the previous instrument
+- every newly selected instrument now resets to M1
+- timeframe changes remain local to the currently selected instrument
+- dedicated automated regression coverage added
+- regression verifies:
+  - first instrument can change from M1 to H1
+  - selecting another instrument resets to M1
+  - the new instrument receives a fresh quote request
+  - the new instrument receives an M1 candle request
+  - M1 becomes selected
+  - H1 is no longer selected
+
+Live PXBT MT5 validation:
+
+- BTCUSDT live quote successfully displayed
+- BTCUSDT M1 historical candles successfully displayed
+- BTCUSDT H1 historical candles successfully displayed
+- live candlestick rendering validated
+- candle count of 100 validated
+- oldest and latest candle timestamps validated
+- history status `Available` validated
+- XAUUSD exposed the cross-instrument timeframe-state defect
+- defect reproduced and corrected
+- after correction, XAUUSD opened directly at M1
+- XAUUSD displayed 100 M1 candles
+- XAUUSD oldest candle timestamp populated
+- XAUUSD latest candle timestamp populated
+- XAUUSD history status displayed `Available`
+- XAUUSD candlestick chart rendered successfully
+- DEMO indicator remained visible
+- READ ONLY indicator remained visible
+
+Automated Flutter validation:
+
+- Markets page widget tests: 12 passed
+- complete Markets feature suite: 27 passed
+- full Flutter test suite: 84 passed
+- flutter analyze: no issues
+- Windows release build: successful
+- release executable generated:
+  `build\windows\x64\runner\Release\trade_command_center.exe`
+
+Final safety validation:
+
+- Flutter HTTP transport still exposes GET only
+- no POST calls found
+- no PUT calls found
+- no PATCH calls found
+- no DELETE calls found
+- no `order_send` mechanism found
+- no `order_check` mechanism found
+- no `mt5.login` mechanism found
+- no `symbol_select` mechanism found in Flutter
+- no place-order mechanism found
+- no trade-execution mechanism found
+- Flutter contains no MetaTrader5 dependency
+- Flutter does not communicate directly with MT5
+- execution remains disabled
+- live trading remains disabled
+- PXBT account remains demo
+- persistent DEMO and READ ONLY UI boundaries remain in place
+- git diff --check contains no whitespace errors
+- known Windows LF-to-CRLF warnings remain non-blocking
+
+## Checkpoint 5.5 - COMPLETE
+
+Trade Command Center Windows now provides live, read-only,
+broker-native quote and historical OHLC visualization for the
+dynamic PXBT MT5 instrument catalogue.
+
+Instrument selection, timeframe selection, typed quote/candle
+models, stale-history handling, candlestick charting, error states,
+and cross-instrument timeframe reset behavior are covered by
+automated tests and live Windows validation.
+
+No order entry, trading, broker mutation, or execution capability
+has been introduced.
+
+## Phase 5 - Flutter Windows - COMPLETE
+
+Phase 5 now provides the Windows desktop application foundation,
+responsive navigation, live read-only system status, dynamic
+multi-asset broker instrument discovery, live quotes, historical
+candles, and candlestick visualization.
+
+The Flutter application remains behind the local FastAPI backend
+and Windows execution-agent architecture and does not communicate
+directly with MT5.
+
+Next:
+
+## Phase 6 - Risk Engine

@@ -211,6 +211,370 @@ void main() {
       expect(find.text('BTCUSD'), findsNothing);
     });
 
+    testWidgets('loads quote and M1 candles when instrument is selected', (
+      tester,
+    ) async {
+      final catalogLoader = buildSafeInstrumentCatalogLoader();
+      final marketDataLoader = buildSafeMarketDataLoader();
+
+      await tester.pumpWidget(
+        _testApp(catalogLoader, marketDataLoader: marketDataLoader),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(marketDataLoader.quoteLoadCount, 0);
+      expect(marketDataLoader.candleLoadCount, 0);
+
+      final btcUsdt = find.byKey(const ValueKey('instrument-BTCUSDT'));
+
+      expect(btcUsdt, findsOneWidget);
+
+      await tester.ensureVisible(btcUsdt);
+      await tester.tap(btcUsdt);
+
+      await tester.pumpAndSettle();
+
+      expect(marketDataLoader.quoteLoadCount, 1);
+      expect(marketDataLoader.candleLoadCount, 1);
+
+      expect(marketDataLoader.lastQuoteSymbol, 'BTCUSDT');
+
+      expect(marketDataLoader.lastCandleSymbol, 'BTCUSDT');
+
+      expect(marketDataLoader.lastTimeframe, 'M1');
+
+      expect(marketDataLoader.lastCount, 100);
+
+      expect(
+        find.byKey(const Key('markets-selected-market-data')),
+        findsOneWidget,
+      );
+
+      expect(find.text('BTCUSDT market data'), findsOneWidget);
+
+      expect(
+        find.text('Read-only live quote and M1 historical candles loaded.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('displays typed quote and candle values', (tester) async {
+      final catalogLoader = buildSafeInstrumentCatalogLoader();
+      final marketDataLoader = buildSafeMarketDataLoader();
+
+      await tester.pumpWidget(
+        _testApp(catalogLoader, marketDataLoader: marketDataLoader),
+      );
+
+      await tester.pumpAndSettle();
+
+      final btcUsdt = find.byKey(const ValueKey('instrument-BTCUSDT'));
+
+      await tester.ensureVisible(btcUsdt);
+      await tester.tap(btcUsdt);
+      await tester.pumpAndSettle();
+
+      String marketValue(String label) {
+        final textWidget = tester.widget<Text>(
+          find.byKey(ValueKey('market-data-$label')),
+        );
+
+        return textWidget.data ?? '';
+      }
+
+      expect(marketValue('Bid'), '1.10000');
+
+      expect(marketValue('Ask'), '1.10020');
+
+      expect(marketValue('Spread'), '0.00020');
+
+      expect(marketValue('Spread Points'), '20.00');
+
+      expect(marketValue('Tick Time'), '2026-08-20T20:00:15.000Z');
+
+      expect(marketValue('Quote Status'), 'Available');
+
+      expect(marketValue('Timeframe'), 'M1');
+
+      expect(marketValue('Candle Count'), '2');
+
+      expect(marketValue('Oldest Candle'), '2026-08-20T19:59:00.000Z');
+
+      expect(marketValue('Latest Candle'), '2026-08-20T20:00:00.000Z');
+
+      expect(marketValue('History Status'), 'Available');
+
+      expect(
+        find.byKey(const Key('market-price-chart')),
+        findsOneWidget,
+        reason: 'Normal history must render the candlestick chart.',
+      );
+
+      expect(find.byKey(const Key('market-price-chart-empty')), findsNothing);
+    });
+
+    testWidgets('displays safe stale-history state', (tester) async {
+      final catalogLoader = buildSafeInstrumentCatalogLoader();
+
+      final marketDataLoader = FakeMarketDataLoader(
+        onLoadQuote: (brokerSymbol) async {
+          return buildMarketQuote(brokerSymbol: brokerSymbol);
+        },
+        onLoadCandles:
+            ({
+              required brokerSymbol,
+              required timeframe,
+              required count,
+            }) async {
+              return buildMarketCandleSeries(
+                brokerSymbol: brokerSymbol,
+                timeframe: timeframe,
+                countRequested: count,
+                available: false,
+                unavailableReason: 'history_stale',
+              );
+            },
+      );
+
+      await tester.pumpWidget(
+        _testApp(catalogLoader, marketDataLoader: marketDataLoader),
+      );
+
+      await tester.pumpAndSettle();
+
+      final eurUsd = find.byKey(const ValueKey('instrument-EURUSD'));
+
+      await tester.ensureVisible(eurUsd);
+      await tester.tap(eurUsd);
+      await tester.pumpAndSettle();
+
+      String marketValue(String label) {
+        final textWidget = tester.widget<Text>(
+          find.byKey(ValueKey('market-data-$label')),
+        );
+
+        return textWidget.data ?? '';
+      }
+
+      expect(marketValue('Quote Status'), 'Available');
+
+      expect(marketValue('Timeframe'), 'M1');
+
+      expect(marketValue('Candle Count'), '0');
+
+      expect(marketValue('Oldest Candle'), 'Unavailable');
+
+      expect(marketValue('Latest Candle'), 'Unavailable');
+
+      expect(marketValue('History Status'), 'history_stale');
+
+      expect(
+        find.text('Read-only live quote and M1 historical candles loaded.'),
+        findsOneWidget,
+      );
+
+      expect(
+        find.textContaining('Unable to load read-only quote'),
+        findsNothing,
+      );
+
+      expect(find.byKey(const Key('market-price-chart')), findsNothing);
+
+      expect(
+        find.byKey(const Key('market-price-chart-empty')),
+        findsOneWidget,
+        reason: 'history_stale must render the safe empty chart state.',
+      );
+
+      expect(
+        find.text('No historical candles available for this timeframe.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('changing timeframe reloads candles without reloading quote', (
+      tester,
+    ) async {
+      final catalogLoader = buildSafeInstrumentCatalogLoader();
+      final marketDataLoader = buildSafeMarketDataLoader();
+
+      await tester.pumpWidget(
+        _testApp(catalogLoader, marketDataLoader: marketDataLoader),
+      );
+
+      await tester.pumpAndSettle();
+
+      final btcUsdt = find.byKey(const ValueKey('instrument-BTCUSDT'));
+
+      expect(btcUsdt, findsOneWidget);
+
+      await tester.ensureVisible(btcUsdt);
+      await tester.tap(btcUsdt);
+      await tester.pumpAndSettle();
+
+      expect(marketDataLoader.quoteLoadCount, 1);
+
+      expect(marketDataLoader.candleLoadCount, 1);
+
+      expect(marketDataLoader.lastQuoteSymbol, 'BTCUSDT');
+
+      expect(marketDataLoader.lastCandleSymbol, 'BTCUSDT');
+
+      expect(marketDataLoader.lastTimeframe, 'M1');
+
+      expect(marketDataLoader.lastCount, 100);
+
+      final h4Chip = find.byKey(const ValueKey('markets-timeframe-H4'));
+
+      expect(h4Chip, findsOneWidget);
+
+      await tester.ensureVisible(h4Chip);
+      await tester.tap(h4Chip);
+      await tester.pumpAndSettle();
+
+      expect(
+        marketDataLoader.quoteLoadCount,
+        1,
+        reason: 'Changing timeframe must not reload the quote.',
+      );
+
+      expect(
+        marketDataLoader.candleLoadCount,
+        2,
+        reason: 'Changing timeframe must load a new candle series.',
+      );
+
+      expect(marketDataLoader.lastQuoteSymbol, 'BTCUSDT');
+
+      expect(marketDataLoader.lastCandleSymbol, 'BTCUSDT');
+
+      expect(marketDataLoader.lastTimeframe, 'H4');
+
+      expect(marketDataLoader.lastCount, 100);
+
+      final timeframeValue = tester.widget<Text>(
+        find.byKey(const ValueKey('market-data-Timeframe')),
+      );
+
+      expect(timeframeValue.data, 'H4');
+
+      expect(
+        find.text('Read-only live quote and H4 historical candles loaded.'),
+        findsOneWidget,
+      );
+
+      final h4ChoiceChip = tester.widget<ChoiceChip>(h4Chip);
+
+      expect(h4ChoiceChip.selected, isTrue);
+    });
+
+    testWidgets('selecting a new instrument resets timeframe to M1', (
+      tester,
+    ) async {
+      final catalogLoader = buildSafeInstrumentCatalogLoader();
+      final marketDataLoader = buildSafeMarketDataLoader();
+
+      await tester.pumpWidget(
+        _testApp(catalogLoader, marketDataLoader: marketDataLoader),
+      );
+
+      await tester.pumpAndSettle();
+
+      final btcUsdt = find.byKey(const ValueKey('instrument-BTCUSDT'));
+
+      await tester.ensureVisible(btcUsdt);
+      await tester.tap(btcUsdt);
+      await tester.pumpAndSettle();
+
+      expect(marketDataLoader.quoteLoadCount, 1);
+
+      expect(marketDataLoader.candleLoadCount, 1);
+
+      expect(marketDataLoader.lastTimeframe, 'M1');
+
+      final h1Chip = find.byKey(const ValueKey('markets-timeframe-H1'));
+
+      expect(h1Chip, findsOneWidget);
+
+      await tester.ensureVisible(h1Chip);
+      await tester.tap(h1Chip);
+      await tester.pumpAndSettle();
+
+      expect(
+        marketDataLoader.quoteLoadCount,
+        1,
+        reason: 'Changing timeframe must not reload the quote.',
+      );
+
+      expect(marketDataLoader.candleLoadCount, 2);
+
+      expect(marketDataLoader.lastTimeframe, 'H1');
+
+      final h1Selected = tester.widget<ChoiceChip>(h1Chip);
+
+      expect(h1Selected.selected, isTrue);
+
+      final eurUsd = find.byKey(const ValueKey('instrument-EURUSD'));
+
+      expect(eurUsd, findsOneWidget);
+
+      await tester.ensureVisible(eurUsd);
+      await tester.tap(eurUsd);
+      await tester.pumpAndSettle();
+
+      expect(
+        marketDataLoader.quoteLoadCount,
+        2,
+        reason: 'Selecting a different instrument must load its quote.',
+      );
+
+      expect(
+        marketDataLoader.candleLoadCount,
+        3,
+        reason:
+            'Selecting a different instrument must load its initial history.',
+      );
+
+      expect(marketDataLoader.lastQuoteSymbol, 'EURUSD');
+
+      expect(marketDataLoader.lastCandleSymbol, 'EURUSD');
+
+      expect(
+        marketDataLoader.lastTimeframe,
+        'M1',
+        reason: 'Every newly selected instrument must start at M1.',
+      );
+
+      expect(marketDataLoader.lastCount, 100);
+
+      final m1Chip = find.byKey(const ValueKey('markets-timeframe-M1'));
+
+      final currentH1Chip = find.byKey(const ValueKey('markets-timeframe-H1'));
+
+      expect(m1Chip, findsOneWidget);
+      expect(currentH1Chip, findsOneWidget);
+
+      final m1Selected = tester.widget<ChoiceChip>(m1Chip);
+
+      final h1NotSelected = tester.widget<ChoiceChip>(currentH1Chip);
+
+      expect(m1Selected.selected, isTrue);
+
+      expect(h1NotSelected.selected, isFalse);
+
+      final timeframeValue = tester.widget<Text>(
+        find.byKey(const ValueKey('market-data-Timeframe')),
+      );
+
+      expect(timeframeValue.data, 'M1');
+
+      expect(
+        find.text('Read-only live quote and M1 historical candles loaded.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('failed refresh preserves last successful catalogue', (
       tester,
     ) async {
@@ -251,9 +615,17 @@ void main() {
   });
 }
 
-Widget _testApp(FakeInstrumentCatalogLoader loader) {
+Widget _testApp(
+  FakeInstrumentCatalogLoader loader, {
+  FakeMarketDataLoader? marketDataLoader,
+}) {
   return MaterialApp(
     theme: ThemeData.dark(useMaterial3: true),
-    home: Scaffold(body: MarketsPage(catalogLoader: loader)),
+    home: Scaffold(
+      body: MarketsPage(
+        catalogLoader: loader,
+        marketDataLoader: marketDataLoader,
+      ),
+    ),
   );
 }

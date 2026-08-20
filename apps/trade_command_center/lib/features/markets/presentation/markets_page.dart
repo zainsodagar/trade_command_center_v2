@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/models/mt5_candle_series.dart';
 import '../../../core/models/mt5_instrument.dart';
+import '../../../core/models/mt5_quote.dart';
 import '../../../core/widgets/metric_card.dart';
 import '../../../core/widgets/page_frame.dart';
 import '../data/instrument_catalog_service.dart';
+import '../data/market_data_service.dart';
 import '../domain/instrument_catalog.dart';
 import '../domain/instrument_catalog_loader.dart';
+import '../domain/market_data_loader.dart';
+import 'widgets/market_price_chart.dart';
 
 class MarketsPage extends StatefulWidget {
-  const MarketsPage({this.catalogLoader, super.key});
+  const MarketsPage({this.catalogLoader, this.marketDataLoader, super.key});
 
   final InstrumentCatalogLoader? catalogLoader;
+  final MarketDataLoader? marketDataLoader;
 
   @override
   State<MarketsPage> createState() => _MarketsPageState();
@@ -19,6 +25,10 @@ class MarketsPage extends StatefulWidget {
 class _MarketsPageState extends State<MarketsPage> {
   late final InstrumentCatalogLoader _catalogLoader;
   late final bool _ownsCatalogLoader;
+
+  late final MarketDataLoader _marketDataLoader;
+  late final bool _ownsMarketDataLoader;
+
   late final TextEditingController _searchController;
 
   InstrumentCatalog? _catalog;
@@ -31,6 +41,29 @@ class _MarketsPageState extends State<MarketsPage> {
 
   InstrumentAvailabilityFilter _availability = InstrumentAvailabilityFilter.all;
 
+  static const String _defaultTimeframe = 'M1';
+
+  static const List<String> _supportedTimeframes = [
+    _defaultTimeframe,
+    'M5',
+    'M15',
+    'M30',
+    'H1',
+    'H4',
+    'D1',
+  ];
+
+  String? _selectedBrokerSymbol;
+  String _selectedTimeframe = _defaultTimeframe;
+
+  Mt5Quote? _selectedQuote;
+  Mt5CandleSeries? _selectedCandles;
+
+  bool _marketDataLoading = false;
+  Object? _marketDataError;
+
+  int _marketDataRequestId = 0;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +74,10 @@ class _MarketsPageState extends State<MarketsPage> {
 
     _catalogLoader = widget.catalogLoader ?? InstrumentCatalogService();
 
+    _ownsMarketDataLoader = widget.marketDataLoader == null;
+
+    _marketDataLoader = widget.marketDataLoader ?? MarketDataService();
+
     _loadCatalog();
   }
 
@@ -50,6 +87,10 @@ class _MarketsPageState extends State<MarketsPage> {
 
     if (_ownsCatalogLoader) {
       _catalogLoader.close();
+    }
+
+    if (_ownsMarketDataLoader) {
+      _marketDataLoader.close();
     }
 
     super.dispose();
@@ -91,6 +132,116 @@ class _MarketsPageState extends State<MarketsPage> {
     }
   }
 
+  Future<void> _selectInstrument(Mt5Instrument instrument) async {
+    final requestId = ++_marketDataRequestId;
+
+    setState(() {
+      _selectedBrokerSymbol = instrument.brokerSymbol;
+      _selectedTimeframe = _defaultTimeframe;
+
+      _selectedQuote = null;
+      _selectedCandles = null;
+
+      _marketDataLoading = true;
+      _marketDataError = null;
+    });
+
+    final quoteFuture = _marketDataLoader.loadQuote(instrument.brokerSymbol);
+
+    final candlesFuture = _marketDataLoader.loadCandles(
+      brokerSymbol: instrument.brokerSymbol,
+      timeframe: _selectedTimeframe,
+      count: 100,
+    );
+
+    try {
+      final results = await Future.wait<Object?>([quoteFuture, candlesFuture]);
+
+      final quote = results[0] as Mt5Quote;
+      final candles = results[1] as Mt5CandleSeries;
+
+      if (!mounted || requestId != _marketDataRequestId) {
+        return;
+      }
+
+      setState(() {
+        _selectedQuote = quote;
+        _selectedCandles = candles;
+
+        _marketDataLoading = false;
+        _marketDataError = null;
+      });
+    } catch (error) {
+      if (!mounted || requestId != _marketDataRequestId) {
+        return;
+      }
+
+      setState(() {
+        _selectedQuote = null;
+        _selectedCandles = null;
+
+        _marketDataLoading = false;
+        _marketDataError = error;
+      });
+    }
+  }
+
+  Future<void> _selectTimeframe(String timeframe) async {
+    if (!_supportedTimeframes.contains(timeframe)) {
+      return;
+    }
+
+    if (timeframe == _selectedTimeframe) {
+      return;
+    }
+
+    final brokerSymbol = _selectedBrokerSymbol;
+
+    if (brokerSymbol == null) {
+      return;
+    }
+
+    final requestId = ++_marketDataRequestId;
+
+    setState(() {
+      _selectedTimeframe = timeframe;
+      _selectedCandles = null;
+
+      _marketDataLoading = true;
+      _marketDataError = null;
+    });
+
+    try {
+      final candles = await _marketDataLoader.loadCandles(
+        brokerSymbol: brokerSymbol,
+        timeframe: timeframe,
+        count: 100,
+      );
+
+      if (!mounted || requestId != _marketDataRequestId) {
+        return;
+      }
+
+      setState(() {
+        _selectedCandles = candles;
+
+        _marketDataLoading = false;
+        _marketDataError = null;
+      });
+    } catch (error) {
+      if (!mounted || requestId != _marketDataRequestId) {
+        return;
+      }
+
+      setState(() {
+        _selectedCandles = null;
+
+        _marketDataLoading = false;
+        _marketDataError = error;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PageFrame(
@@ -102,6 +253,19 @@ class _MarketsPageState extends State<MarketsPage> {
         children: [
           _MarketsHeader(loading: _loading, onRefresh: _loadCatalog),
           const SizedBox(height: 16),
+          if (_selectedBrokerSymbol != null) ...[
+            _MarketDataSelectionPanel(
+              brokerSymbol: _selectedBrokerSymbol!,
+              quote: _selectedQuote,
+              candles: _selectedCandles,
+              timeframe: _selectedTimeframe,
+              supportedTimeframes: _supportedTimeframes,
+              onTimeframeSelected: _selectTimeframe,
+              loading: _marketDataLoading,
+              error: _marketDataError,
+            ),
+            const SizedBox(height: 16),
+          ],
           _buildContent(context),
         ],
       ),
@@ -294,7 +458,11 @@ class _MarketsPageState extends State<MarketsPage> {
                 'or availability filter.',
           )
         else
-          _InstrumentList(instruments: filtered),
+          _InstrumentList(
+            instruments: filtered,
+            selectedBrokerSymbol: _selectedBrokerSymbol,
+            onSelected: _selectInstrument,
+          ),
       ],
     );
   }
@@ -372,9 +540,15 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _InstrumentList extends StatelessWidget {
-  const _InstrumentList({required this.instruments});
+  const _InstrumentList({
+    required this.instruments,
+    required this.selectedBrokerSymbol,
+    required this.onSelected,
+  });
 
   final List<Mt5Instrument> instruments;
+  final String? selectedBrokerSymbol;
+  final ValueChanged<Mt5Instrument> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -384,23 +558,163 @@ class _InstrumentList extends StatelessWidget {
       itemCount: instruments.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        return _InstrumentCard(instrument: instruments[index]);
+        final instrument = instruments[index];
+
+        return _InstrumentCard(
+          instrument: instrument,
+          selected: selectedBrokerSymbol == instrument.brokerSymbol,
+          onTap: () => onSelected(instrument),
+        );
       },
     );
   }
 }
 
 class _InstrumentCard extends StatelessWidget {
-  const _InstrumentCard({required this.instrument});
+  const _InstrumentCard({
+    required this.instrument,
+    required this.selected,
+    required this.onTap,
+  });
 
   final Mt5Instrument instrument;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final selectedColor = Theme.of(context).colorScheme.primary;
+
     return Container(
       key: ValueKey('instrument-${instrument.brokerSymbol}'),
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121C2D),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: selected
+              ? selectedColor.withValues(alpha: 0.75)
+              : Colors.white10,
+          width: selected ? 1.5 : 1,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          instrument.brokerSymbol,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          instrument.description,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _AvailabilityBadge(instrument: instrument),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 24,
+                runSpacing: 10,
+                children: [
+                  _InstrumentDetail(
+                    label: 'Group',
+                    value: instrument.brokerGroup,
+                  ),
+                  _InstrumentDetail(
+                    label: 'Path',
+                    value: instrument.brokerPath,
+                  ),
+                  _InstrumentDetail(
+                    label: 'Base',
+                    value: instrument.currencyBase,
+                  ),
+                  _InstrumentDetail(
+                    label: 'Profit',
+                    value: instrument.currencyProfit,
+                  ),
+                  _InstrumentDetail(
+                    label: 'Digits',
+                    value: '${instrument.digits}',
+                  ),
+                  _InstrumentDetail(
+                    label: 'Volume',
+                    value:
+                        '${instrument.volumeMin} '
+                        '– ${instrument.volumeMax}',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MarketDataSelectionPanel extends StatelessWidget {
+  const _MarketDataSelectionPanel({
+    required this.brokerSymbol,
+    required this.quote,
+    required this.candles,
+    required this.timeframe,
+    required this.supportedTimeframes,
+    required this.onTimeframeSelected,
+    required this.loading,
+    required this.error,
+  });
+
+  final String brokerSymbol;
+  final Mt5Quote? quote;
+  final Mt5CandleSeries? candles;
+
+  final String timeframe;
+  final List<String> supportedTimeframes;
+  final ValueChanged<String> onTimeframeSelected;
+
+  final bool loading;
+  final Object? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = error != null
+        ? Icons.warning_amber_outlined
+        : loading
+        ? Icons.sync
+        : Icons.query_stats_outlined;
+
+    final message = error != null
+        ? 'Unable to load read-only $timeframe market data.\n\n$error'
+        : loading
+        ? 'Loading live quote and $timeframe historical candles '
+              'through the local execution agent.'
+        : 'Read-only live quote and $timeframe historical candles loaded.';
+
+    return Container(
+      key: const Key('markets-selected-market-data'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFF121C2D),
         borderRadius: BorderRadius.circular(14),
@@ -412,54 +726,208 @@ class _InstrumentCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Icon(icon, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      instrument.brokerSymbol,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      '$brokerSymbol market data',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
-                      instrument.description,
-                      style: const TextStyle(color: Colors.white70),
+                      message,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              _AvailabilityBadge(instrument: instrument),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
+          const Text(
+            'Timeframe',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 8),
           Wrap(
-            spacing: 24,
-            runSpacing: 10,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              _InstrumentDetail(label: 'Group', value: instrument.brokerGroup),
-              _InstrumentDetail(label: 'Path', value: instrument.brokerPath),
-              _InstrumentDetail(label: 'Base', value: instrument.currencyBase),
-              _InstrumentDetail(
-                label: 'Profit',
-                value: instrument.currencyProfit,
+              for (final option in supportedTimeframes)
+                ChoiceChip(
+                  key: ValueKey('markets-timeframe-$option'),
+                  label: Text(option),
+                  selected: timeframe == option,
+                  onSelected: loading
+                      ? null
+                      : (_) => onTimeframeSelected(option),
+                ),
+            ],
+          ),
+          if (loading) ...[
+            const SizedBox(height: 14),
+            const LinearProgressIndicator(),
+          ],
+          if (!loading && error == null) ...[
+            const SizedBox(height: 18),
+            _buildMarketDataValues(),
+            if (candles != null) ...[
+              const SizedBox(height: 22),
+              const Text(
+                'Historical Price',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white70,
+                ),
               ),
-              _InstrumentDetail(label: 'Digits', value: '${instrument.digits}'),
-              _InstrumentDetail(
-                label: 'Volume',
-                value:
-                    '${instrument.volumeMin} '
-                    '– ${instrument.volumeMax}',
+              const SizedBox(height: 10),
+              MarketPriceChart(
+                candles: candles!.candles,
+                digits: candles!.digits,
               ),
             ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMarketDataValues() {
+    final currentQuote = quote;
+    final currentCandles = candles;
+
+    if (currentQuote == null || currentCandles == null) {
+      return const Text(
+        'Market data is not currently available.',
+        style: TextStyle(color: Colors.white60),
+      );
+    }
+
+    return Wrap(
+      spacing: 24,
+      runSpacing: 16,
+      children: [
+        _MarketDataValue(
+          label: 'Bid',
+          value: _formatPrice(currentQuote.bid, currentQuote.digits),
+        ),
+        _MarketDataValue(
+          label: 'Ask',
+          value: _formatPrice(currentQuote.ask, currentQuote.digits),
+        ),
+        _MarketDataValue(
+          label: 'Spread',
+          value: _formatPrice(currentQuote.spread, currentQuote.digits),
+        ),
+        _MarketDataValue(
+          label: 'Spread Points',
+          value: _formatNumber(currentQuote.spreadPoints),
+        ),
+        _MarketDataValue(
+          label: 'Tick Time',
+          value: _formatDateTime(currentQuote.tickTime),
+        ),
+        _MarketDataValue(
+          label: 'Quote Status',
+          value: currentQuote.quoteAvailable
+              ? 'Available'
+              : _formatUnavailableReason(currentQuote.unavailableReason),
+        ),
+        _MarketDataValue(label: 'Timeframe', value: currentCandles.timeframe),
+        _MarketDataValue(
+          label: 'Candle Count',
+          value: '${currentCandles.candleCount}',
+        ),
+        _MarketDataValue(
+          label: 'Oldest Candle',
+          value: _formatDateTime(currentCandles.oldestCandleTime),
+        ),
+        _MarketDataValue(
+          label: 'Latest Candle',
+          value: _formatDateTime(currentCandles.latestCandleTime),
+        ),
+        _MarketDataValue(
+          label: 'History Status',
+          value: currentCandles.candlesAvailable
+              ? 'Available'
+              : _formatUnavailableReason(currentCandles.unavailableReason),
+        ),
+      ],
+    );
+  }
+}
+
+class _MarketDataValue extends StatelessWidget {
+  const _MarketDataValue({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 180,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Colors.white54),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            key: ValueKey('market-data-$label'),
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
+}
+
+String _formatPrice(double? value, int digits) {
+  if (value == null) {
+    return 'Unavailable';
+  }
+
+  return value.toStringAsFixed(digits);
+}
+
+String _formatNumber(double? value) {
+  if (value == null) {
+    return 'Unavailable';
+  }
+
+  return value.toStringAsFixed(2);
+}
+
+String _formatDateTime(DateTime? value) {
+  if (value == null) {
+    return 'Unavailable';
+  }
+
+  return value.toUtc().toIso8601String();
+}
+
+String _formatUnavailableReason(String? value) {
+  if (value == null || value.trim().isEmpty) {
+    return 'Unavailable';
+  }
+
+  return value;
 }
 
 class _AvailabilityBadge extends StatelessWidget {

@@ -46,6 +46,7 @@ class RiskViolationCode(StrEnum):
 
     POSITION_SIZING_MISMATCH = "position_sizing_mismatch"
     INVALID_QUANTITY_GRID = "invalid_quantity_grid"
+    MISSING_TICK_VALUE_LOSS = "missing_tick_value_loss"
 
     POSITION_SIZE_BELOW_MINIMUM = "position_size_below_minimum"
     POSITION_SIZE_ABOVE_MAXIMUM = "position_size_above_maximum"

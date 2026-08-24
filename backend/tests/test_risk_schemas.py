@@ -599,3 +599,9 @@ def test_exposure_data_unavailable_violation_code_is_stable() -> None:
         RiskViolationCode.EXPOSURE_DATA_UNAVAILABLE.value
         == "exposure_data_unavailable"
     )
+
+def test_missing_tick_value_loss_violation_code_is_stable() -> None:
+    assert (
+        RiskViolationCode.MISSING_TICK_VALUE_LOSS.value
+        == "missing_tick_value_loss"
+    )

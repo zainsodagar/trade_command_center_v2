@@ -8,7 +8,7 @@ Phase 6 - Risk Engine
 
 ## Current checkpoint
 
-Checkpoint 6.3 - Trade and Portfolio Guardrails - COMPLETE
+Checkpoint 6.4 - Risk Evaluation Service - COMPLETE
 
 ## Completed
 
@@ -32,11 +32,11 @@ Checkpoint 6.3 - Trade and Portfolio Guardrails - COMPLETE
 
 ## In progress
 
-- Final repository closure for Checkpoint 6.3.
+- Final repository closure for Checkpoint 6.4.
 
 ## Next checkpoint
 
-Checkpoint 6.4 - Risk Evaluation Service.
+Checkpoint 6.5 - Read-only Risk Preview API.
 
 ## Blocked
 
@@ -1383,4 +1383,97 @@ risk information used for those decisions.
 
 Next:
 
-### Checkpoint 6.4 - Risk Evaluation Service
+### Checkpoint 6.4 - Risk Evaluation Service - COMPLETE
+
+Completed:
+
+- deterministic risk-evaluation orchestration service added
+- `RiskEvaluationInput` is the single input contract
+- deterministic position sizing runs first
+- unavailable position sizing fails closed immediately
+- unavailable sizing does not enter trade or portfolio guardrails
+- available sizing is passed to deterministic guardrail evaluation
+- final sizing diagnostics are preserved for auditability
+- final ALLOW/BLOCK decision is exposed through `RiskEvaluationResult`
+- final violation collection is exposed through `RiskEvaluationResult`
+- orchestration contains no duplicated position-sizing formula
+- orchestration contains no duplicated guardrail calculation
+
+Sizing-failure mapping:
+
+- `invalid_account_equity`
+  maps to `invalid_account_equity`
+- `invalid_stop_loss`
+  maps to `invalid_stop_loss`
+- `missing_tick_value_loss`
+  maps to `missing_tick_value_loss`
+- `invalid_quantity_grid`
+  maps to `invalid_quantity_grid`
+- `position_size_below_minimum`
+  maps to `position_size_below_minimum`
+- unknown or unmapped future sizing failures fail closed to
+  `position_sizing_mismatch`
+
+Risk-evaluation hardening:
+
+- `RiskEvaluationResult` is immutable
+- unavailable position sizing cannot coexist with an ALLOW decision
+- contradictory final result construction is rejected by model validation
+- sizing failure short-circuits guardrail execution
+- available sizing invokes guardrail evaluation exactly once
+- guardrail BLOCK results are preserved without reinterpretation
+- missing exposure remains a guardrail failure rather than a sizing failure
+- sizing-reason mappings are tested against the complete current enum
+- missing mapping entries fail closed rather than fail open
+- repeated evaluation is deterministic
+- risk evaluation does not mutate its input
+
+Auditability:
+
+- the complete `PositionSizingResult` is retained in the final result
+- normalized quantity remains available for inspection
+- estimated monetary stop loss remains available for inspection
+- machine-readable sizing failure reason remains available
+- final machine-readable risk violations remain available
+- final risk decision remains explicitly ALLOW or BLOCK
+
+Automated validation:
+
+- risk-schema suite: 84 passed
+- position-sizing suite: 31 passed
+- hardened guardrail suite: 27 passed
+- hardened risk-evaluation suite: 16 passed
+- deterministic risk suite total: 158 passed
+- full backend regression suite passed
+- full backend Ruff check passed
+- deterministic risk-suite collection passed
+- `git diff --check` passed
+- exact working-tree integrity check passed
+- required Checkpoint 6.4 orchestration fragments verified
+- known Starlette/httpx test warning remains non-blocking
+
+Safety validation:
+
+- risk domain contains no `MetaTrader5` dependency
+- risk domain contains no `order_send`
+- risk domain contains no `order_check`
+- risk domain contains no `mt5.login`
+- risk domain contains no `symbol_select`
+- risk domain contains no HTTP client mechanism
+- risk domain contains no broker client mechanism
+- risk evaluation contains no persistence mechanism
+- risk evaluation contains no AI mechanism
+- risk evaluation contains no order submission mechanism
+- risk evaluation contains no execution mechanism
+- backend remained stopped during Checkpoint 6.4 development
+- execution agent remained stopped during Checkpoint 6.4 development
+- execution remains disabled
+- live trading remains disabled
+
+Checkpoint 6.4 establishes one deterministic orchestration boundary that
+combines position sizing and portfolio guardrails into a single auditable
+risk decision without introducing broker communication or execution.
+
+Next:
+
+### Checkpoint 6.5 - Read-only Risk Preview API

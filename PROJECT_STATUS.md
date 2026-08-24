@@ -1,14 +1,14 @@
 # Project Status
 
-Last updated: 2026-08-20
+Last updated: 2026-08-24
 
 ## Current phase
 
-Phase 5 - Flutter Windows - COMPLETE
+Phase 6 - Risk Engine
 
 ## Current checkpoint
 
-Checkpoint 5.5 - Quotes and Historical Candles UI - COMPLETE
+Checkpoint 6.1 - Deterministic Risk Contract & Core Types - COMPLETE
 
 ## Completed
 
@@ -32,11 +32,11 @@ Checkpoint 5.5 - Quotes and Historical Candles UI - COMPLETE
 
 ## In progress
 
-- Final repository closure for completed Phase 5 Flutter Windows work.
+- Final repository closure for Checkpoint 6.1.
 
 ## Next checkpoint
 
-Phase 6 - Risk Engine.
+Checkpoint 6.2 - Position Sizing Engine.
 
 ## Blocked
 
@@ -1083,3 +1083,77 @@ directly with MT5.
 Next:
 
 ## Phase 6 - Risk Engine
+
+### Checkpoint 6.1 - Deterministic Risk Contract & Core Types - COMPLETE
+
+Completed:
+
+- immutable `RiskSchema` foundation added
+- risk-domain models reject unknown fields
+- risk-domain models are immutable
+- deterministic `RiskDecision` contract added:
+  - `allow`
+  - `block`
+- stable machine-readable `RiskViolationCode` values added
+- deterministic `RiskViolation` model added
+- deterministic `RiskCheckResult` model added
+- ALLOW results cannot contain violations
+- BLOCK results require at least one violation
+- `RiskLimits` added using `Decimal` for risk percentages
+- non-finite Decimal risk limits are rejected
+- risk-per-trade percentage validation added
+- daily-loss-limit percentage validation added
+- maximum-open-position validation added
+- total-exposure limit validation added
+- total-exposure percentage may exceed 100 percent for leveraged markets
+- broker-independent `TradeSide` contract added
+- immutable `AccountRiskState` added
+- immutable `RiskInstrumentSpec` added
+- immutable `TradeRiskCandidate` added
+- immutable `RiskEvaluationInput` added
+- normalized symbol identity must match between trade and instrument
+- broker-native symbol identity must match between trade and instrument
+- runtime broker/client objects are rejected by the risk input contract
+- account, instrument, and trade numeric risk inputs use `Decimal`
+- quantity range validation added
+- finite-value validation added for risk calculation inputs
+
+Risk-engine boundary decisions:
+
+- non-positive account equity is accepted by the schema so the
+  deterministic engine can return `INVALID_ACCOUNT_EQUITY`
+- invalid stop-loss geometry is accepted by the schema so the
+  deterministic engine can return `INVALID_STOP_LOSS`
+- schema validation remains separate from deterministic risk decisions
+- candidate trade objects describe proposals only
+- candidate trade objects cannot submit or execute orders
+
+Automated validation:
+
+- complete targeted risk schema and input-contract suite passed
+- full backend regression suite passed
+- full backend Ruff check passed
+- `git diff --check` passed
+- repository integrity check passed
+
+Safety validation:
+
+- risk domain contains no `MetaTrader5` dependency
+- risk domain contains no `order_send`
+- risk domain contains no `order_check`
+- risk domain contains no `mt5.login`
+- risk domain contains no `symbol_select`
+- risk domain contains no HTTP client mechanism
+- risk domain contains no broker client mechanism
+- backend remained stopped during Checkpoint 6.1 development
+- execution agent remained stopped during Checkpoint 6.1 development
+- execution remains disabled
+- live trading remains disabled
+- no broker mutation or execution capability was introduced
+
+Checkpoint 6.1 establishes the deterministic, broker-independent data
+contract that later risk calculations will consume.
+
+Next:
+
+### Checkpoint 6.2 - Position Sizing Engine

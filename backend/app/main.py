@@ -9,6 +9,7 @@ from backend.app.brokers.api import (
     router as broker_router,
 )
 from backend.app.core.config import get_settings
+from backend.app.risk_preview import router as risk_preview_router
 
 settings = get_settings()
 
@@ -19,6 +20,7 @@ app = FastAPI(
 )
 
 app.include_router(broker_router)
+app.include_router(risk_preview_router)
 
 
 @app.get("/health", tags=["system"])

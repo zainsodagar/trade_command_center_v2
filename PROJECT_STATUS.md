@@ -8,7 +8,7 @@ Phase 6 - Risk Engine
 
 ## Current checkpoint
 
-Checkpoint 6.4 - Risk Evaluation Service - COMPLETE
+Checkpoint 6.5 - Read-only Risk Preview API - COMPLETE
 
 ## Completed
 
@@ -32,11 +32,11 @@ Checkpoint 6.4 - Risk Evaluation Service - COMPLETE
 
 ## In progress
 
-- Final repository closure for Checkpoint 6.4.
+- Final repository closure for Checkpoint 6.5.
 
 ## Next checkpoint
 
-Checkpoint 6.5 - Read-only Risk Preview API.
+Checkpoint 6.6 - Final Phase 6 Validation and Closure.
 
 ## Blocked
 
@@ -1476,4 +1476,81 @@ risk decision without introducing broker communication or execution.
 
 Next:
 
-### Checkpoint 6.5 - Read-only Risk Preview API
+### Checkpoint 6.5 - Read-only Risk Preview API - COMPLETE
+
+Completed:
+
+- read-only risk-preview HTTP adapter added
+- deterministic risk engine remains separated from FastAPI
+- risk-preview router registered with the main FastAPI application
+- public endpoint added at `POST /api/v1/risk/preview`
+- structured `RiskEvaluationInput` JSON is accepted as the request body
+- deterministic `evaluate_risk()` remains the authoritative evaluation service
+- HTTP adapter contains no duplicated sizing or guardrail logic
+- response preserves complete deterministic risk-evaluation diagnostics
+
+Read-only response contract:
+
+- `read_only` is always `true`
+- `execution_enabled` is always `false`
+- `live_trading_enabled` is always `false`
+- final ALLOW/BLOCK result is returned
+- finalized position-sizing diagnostics are returned
+- machine-readable risk violations are returned
+- missing sizing inputs continue to fail closed
+- guardrail failures continue to return deterministic BLOCK results
+
+Public API behavior:
+
+- OpenAPI exposes exactly one `/api/v1/risk` endpoint
+- the endpoint supports POST only
+- GET requests are rejected
+- valid candidate returns deterministic ALLOW
+- valid example normalizes quantity to `0.10`
+- untradable instrument returns deterministic BLOCK
+- missing `tick_value_loss` returns deterministic sizing BLOCK
+- malformed risk inputs return HTTP 422
+- request bodies cannot override execution or live-trading safety flags
+- repeated identical previews return identical results
+- preview requests do not mutate system status
+
+Automated validation:
+
+- risk-preview API suite: 9 passed
+- risk-schema suite: 84 passed
+- position-sizing suite: 31 passed
+- guardrail suite: 27 passed
+- risk-evaluation suite: 16 passed
+- deterministic risk plus API suite total: 167 passed
+- full backend regression suite passed
+- full backend Ruff check passed
+- deterministic risk plus API test collection passed
+- `git diff --check` passed
+- exact working-tree integrity check passed
+- known Starlette/httpx TestClient warning remains non-blocking
+- known Windows LF-to-CRLF Git warning remains non-blocking
+
+Architecture and safety validation:
+
+- deterministic risk core remains HTTP-free
+- deterministic risk core remains persistence-free
+- deterministic risk core remains broker-independent
+- deterministic risk core remains execution-free
+- existing `risk/models.py` persistence model remains unchanged
+- risk-preview HTTP adapter contains no broker client
+- risk-preview HTTP adapter contains no MT5 mechanism
+- risk-preview HTTP adapter contains no persistence mechanism
+- risk-preview HTTP adapter contains no background execution mechanism
+- risk-preview HTTP adapter contains no subprocess or socket mechanism
+- backend remained stopped during Checkpoint 6.5 development
+- execution agent remained stopped during Checkpoint 6.5 development
+- execution remains disabled
+- live trading remains disabled
+
+Checkpoint 6.5 establishes a safe read-only HTTP boundary around the
+deterministic risk engine without adding order creation, persistence,
+broker mutation, or execution capability.
+
+Next:
+
+### Checkpoint 6.6 - Final Phase 6 Validation and Closure

@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-24
+Last updated: 2026-08-25
 
 ## Current phase
 
@@ -8,7 +8,7 @@ Phase 6 - Risk Engine
 
 ## Current checkpoint
 
-Checkpoint 6.1 - Deterministic Risk Contract & Core Types - COMPLETE
+Checkpoint 6.2 - Position Sizing Engine - COMPLETE
 
 ## Completed
 
@@ -32,11 +32,11 @@ Checkpoint 6.1 - Deterministic Risk Contract & Core Types - COMPLETE
 
 ## In progress
 
-- Final repository closure for Checkpoint 6.1.
+- Final repository closure for Checkpoint 6.2.
 
 ## Next checkpoint
 
-Checkpoint 6.2 - Position Sizing Engine.
+Checkpoint 6.3 - Trade and Portfolio Guardrails.
 
 ## Blocked
 
@@ -1156,4 +1156,112 @@ contract that later risk calculations will consume.
 
 Next:
 
-### Checkpoint 6.2 - Position Sizing Engine
+### Checkpoint 6.2 - Position Sizing Engine - COMPLETE
+
+Completed:
+
+- deterministic position-sizing engine added
+- all position-sizing calculations use `Decimal`
+- position sizing is derived from:
+  - account equity
+  - configured risk-per-trade percentage
+  - entry price
+  - stop-loss price
+  - broker tick size
+  - broker loss tick value
+  - broker minimum quantity
+  - broker maximum quantity
+  - broker quantity step
+- deterministic risk budget calculation added
+- deterministic stop-distance calculation added
+- deterministic stop-tick calculation added
+- deterministic loss-per-quantity calculation added
+- deterministic raw-quantity calculation added
+- deterministic normalized-quantity calculation added
+- estimated monetary loss at stop is exposed
+- calculation diagnostics are retained in the result contract
+- sizing result contract is immutable
+- machine-readable unavailable reasons added
+
+Safety-first sizing behavior:
+
+- position quantity is always rounded DOWN to the broker quantity step
+- quantity normalization never rounds upward into additional risk
+- normalized estimated stop loss cannot exceed the configured risk budget
+- broker maximum quantity is enforced
+- non-step-aligned maximum quantities are reduced to the largest safe
+  zero-anchored grid quantity
+- calculated quantities below broker minimum are rejected safely
+- non-positive account equity returns a deterministic unavailable result
+- invalid BUY stop-loss geometry is rejected
+- invalid SELL stop-loss geometry is rejected
+- missing broker `tick_value_loss` returns a safe unavailable result
+- `contract_size` is not used to guess missing tick-value risk
+- unsupported or ambiguous quantity grids return
+  `invalid_quantity_grid`
+- misaligned minimum quantity and quantity step are rejected rather
+  than guessed
+- quantity grids with no positive executable step are rejected
+- no broker-native quantity convention is silently inferred
+
+Deterministic formula:
+
+- risk budget =
+  equity multiplied by risk-per-trade percentage divided by 100
+- stop distance =
+  absolute difference between entry price and stop-loss price
+- stop ticks =
+  stop distance divided by tick size
+- loss per quantity =
+  stop ticks multiplied by broker loss tick value
+- raw quantity =
+  risk budget divided by loss per quantity
+- normalized quantity =
+  raw quantity rounded DOWN to broker quantity step
+- estimated stop loss =
+  normalized quantity multiplied by loss per quantity
+
+Key safety validation:
+
+- a raw quantity requiring normalization from above 0.14 but below 0.15
+  was normalized to 0.14
+- quantity 0.15 would have produced estimated loss of 105 against
+  risk budget 100
+- engine instead selected 0.14
+- resulting estimated loss was 98 against risk budget 100
+- automated assertion confirmed normalized risk did not exceed
+  configured risk
+
+Automated validation:
+
+- targeted position-sizing suite: 31 passed
+- combined risk-domain suite: 104 passed
+- full backend regression suite passed
+- full backend Ruff check passed
+- `git diff --check` passed
+- repository integrity check passed
+- known Starlette/httpx test warning remains non-blocking
+
+Safety validation:
+
+- risk domain contains no `MetaTrader5` dependency
+- risk domain contains no `order_send`
+- risk domain contains no `order_check`
+- risk domain contains no `mt5.login`
+- risk domain contains no `symbol_select`
+- risk domain contains no HTTP client mechanism
+- risk domain contains no broker client mechanism
+- backend remained stopped during Checkpoint 6.2 development
+- execution agent remained stopped during Checkpoint 6.2 development
+- execution remains disabled
+- live trading remains disabled
+- no broker mutation capability was introduced
+- no order submission capability was introduced
+- no execution capability was introduced
+
+Checkpoint 6.2 establishes deterministic, auditable, safety-first
+position sizing without any broker communication or execution behavior.
+
+Next:
+
+### Checkpoint 6.3 - Trade and Portfolio Guardrails

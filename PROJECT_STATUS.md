@@ -4,11 +4,11 @@ Last updated: 2026-08-25
 
 ## Current phase
 
-Phase 6 - Risk Engine
+Phase 6 - Risk Engine - COMPLETE
 
 ## Current checkpoint
 
-Checkpoint 6.5 - Read-only Risk Preview API - COMPLETE
+Checkpoint 6.6 - Final Phase 6 Validation and Closure - COMPLETE
 
 ## Completed
 
@@ -32,11 +32,11 @@ Checkpoint 6.5 - Read-only Risk Preview API - COMPLETE
 
 ## In progress
 
-- Final repository closure for Checkpoint 6.5.
+- Final repository closure for Phase 6.
 
 ## Next checkpoint
 
-Checkpoint 6.6 - Final Phase 6 Validation and Closure.
+Phase 7 - Simulated Execution.
 
 ## Blocked
 
@@ -1553,4 +1553,88 @@ broker mutation, or execution capability.
 
 Next:
 
-### Checkpoint 6.6 - Final Phase 6 Validation and Closure
+### Checkpoint 6.6 - Final Phase 6 Validation and Closure - COMPLETE
+
+Final Phase 6 regression:
+
+- repository started from the frozen Checkpoint 6.5 commit
+- local HEAD matched `origin/main`
+- working tree was clean before validation
+- backend remained stopped
+- execution agent remained stopped
+- full backend test suite passed
+- full backend Ruff check passed
+- deterministic risk plus API suite passed
+- deterministic risk plus API collection remained exactly 167 tests
+- `git diff --check` passed
+- validation left the working tree unchanged
+
+Final deterministic risk and API counts:
+
+- risk schemas: 84
+- position sizing: 31
+- trade and portfolio guardrails: 27
+- risk evaluation service: 16
+- read-only risk preview API: 9
+- deterministic risk plus API total: 167
+
+Cross-system safety audit:
+
+- execution-agent full test suite passed
+- execution agent exposes exactly seven approved GET-only routes
+- execution-agent effective `execution_enabled` remained false
+- execution-agent effective `live_trading_enabled` remained false
+- no `mt5.order_send()` call exists
+- no `mt5.order_check()` call exists
+- no `mt5.login()` call exists
+- no explicit `mt5.symbol_select()` call exists
+- backend risk API remains exactly one POST-only preview endpoint
+- backend execution flag remains false
+- backend live-trading flag remains false
+- deterministic risk core remains isolated from HTTP
+- deterministic risk core remains isolated from persistence
+- deterministic risk core remains broker-independent
+- deterministic risk core remains isolated from MT5
+- deterministic risk core remains execution-free
+- risk-preview HTTP adapter remains calculation-only
+- Flutter analyze completed with no issues
+- Flutter test suite: 84 passed
+- Flutter networking remains GET-only
+- Flutter contains no trade-execution or order-entry methods
+- Flutter contains no direct MT5 integration
+- backend remained stopped after the audit
+- execution agent remained stopped after the audit
+- final working tree remained clean
+
+Phase 6 safety state:
+
+- deterministic sizing is authoritative
+- deterministic guardrails are authoritative
+- unavailable sizing fails closed
+- stale or inconsistent sizing diagnostics fail closed
+- risk limits cannot be bypassed by the preview API
+- preview API performs no persistence
+- preview API performs no broker mutation
+- preview API performs no order creation
+- preview API performs no execution
+- AI has no execution authority
+- execution remains disabled
+- live trading remains disabled
+
+Phase 6 deliverables completed:
+
+- Checkpoint 6.1 - Deterministic Risk Contract and Core Types
+- Checkpoint 6.2 - Position Sizing Engine
+- Checkpoint 6.3 - Trade and Portfolio Guardrails
+- Checkpoint 6.4 - Risk Evaluation Service
+- Checkpoint 6.5 - Read-only Risk Preview API
+- Checkpoint 6.6 - Final Phase 6 Validation and Closure
+
+Phase 6 - Risk Engine is COMPLETE.
+
+The system now has a frozen deterministic risk boundary before any
+simulated or broker execution work begins.
+
+Next:
+
+### Phase 7 - Simulated Execution

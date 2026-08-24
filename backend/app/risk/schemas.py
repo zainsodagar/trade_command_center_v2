@@ -40,8 +40,12 @@ class RiskViolationCode(StrEnum):
     DAILY_LOSS_LIMIT_REACHED = "daily_loss_limit_reached"
     MAX_OPEN_POSITIONS_REACHED = "max_open_positions_reached"
     MAX_TOTAL_EXPOSURE_EXCEEDED = "max_total_exposure_exceeded"
+    EXPOSURE_DATA_UNAVAILABLE = "exposure_data_unavailable"
 
     INSTRUMENT_NOT_TRADABLE = "instrument_not_tradable"
+
+    POSITION_SIZING_MISMATCH = "position_sizing_mismatch"
+    INVALID_QUANTITY_GRID = "invalid_quantity_grid"
 
     POSITION_SIZE_BELOW_MINIMUM = "position_size_below_minimum"
     POSITION_SIZE_ABOVE_MAXIMUM = "position_size_above_maximum"
@@ -130,6 +134,12 @@ class RiskInstrumentSpec(RiskSchema):
 
     All sizing inputs use Decimal even when the originating broker API
     supplies floating-point values.
+
+    `gross_exposure_per_quantity`, when supplied, is the gross exposure in
+    the account risk currency represented by one normalized quantity for
+    this risk evaluation. The deterministic risk engine must not infer this
+    value from `contract_size` because broker and currency-conversion
+    semantics can differ across instruments.
     """
 
     symbol: str = Field(
@@ -164,6 +174,10 @@ class RiskInstrumentSpec(RiskSchema):
         default=None,
         gt=ZERO,
     )
+    gross_exposure_per_quantity: Decimal | None = Field(
+        default=None,
+        gt=ZERO,
+    )
 
     @field_validator(
         "minimum_quantity",
@@ -172,6 +186,7 @@ class RiskInstrumentSpec(RiskSchema):
         "tick_size",
         "tick_value_loss",
         "contract_size",
+        "gross_exposure_per_quantity",
     )
     @classmethod
     def validate_finite_decimal(

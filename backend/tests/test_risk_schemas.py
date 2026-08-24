@@ -528,3 +528,74 @@ def test_risk_evaluation_input_rejects_runtime_client_objects() -> None:
             trade=make_trade_candidate(),
             broker_client=object(),
         )
+
+def test_gross_exposure_per_quantity_preserves_decimal_exactly() -> None:
+    instrument = make_instrument_spec(
+        gross_exposure_per_quantity=Decimal("12345.6789"),
+    )
+
+    assert (
+        instrument.gross_exposure_per_quantity
+        == Decimal("12345.6789")
+    )
+    assert isinstance(
+        instrument.gross_exposure_per_quantity,
+        Decimal,
+    )
+
+
+def test_gross_exposure_per_quantity_may_be_omitted() -> None:
+    instrument = make_instrument_spec()
+
+    assert instrument.gross_exposure_per_quantity is None
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        Decimal("0"),
+        Decimal("-0.01"),
+        Decimal("-100"),
+    ],
+)
+def test_gross_exposure_per_quantity_rejects_non_positive_values(
+    value: Decimal,
+) -> None:
+    with pytest.raises(ValidationError):
+        make_instrument_spec(
+            gross_exposure_per_quantity=value,
+        )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        Decimal("NaN"),
+        Decimal("Infinity"),
+        Decimal("-Infinity"),
+    ],
+)
+def test_gross_exposure_per_quantity_rejects_non_finite_values(
+    value: Decimal,
+) -> None:
+    with pytest.raises(ValidationError):
+        make_instrument_spec(
+            gross_exposure_per_quantity=value,
+        )
+
+
+def test_contract_size_does_not_imply_gross_exposure() -> None:
+    instrument = make_instrument_spec(
+        contract_size=Decimal("100000"),
+        gross_exposure_per_quantity=None,
+    )
+
+    assert instrument.contract_size == Decimal("100000")
+    assert instrument.gross_exposure_per_quantity is None
+
+
+def test_exposure_data_unavailable_violation_code_is_stable() -> None:
+    assert (
+        RiskViolationCode.EXPOSURE_DATA_UNAVAILABLE.value
+        == "exposure_data_unavailable"
+    )

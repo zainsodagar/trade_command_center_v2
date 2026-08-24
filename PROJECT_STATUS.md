@@ -8,7 +8,7 @@ Phase 6 - Risk Engine
 
 ## Current checkpoint
 
-Checkpoint 6.2 - Position Sizing Engine - COMPLETE
+Checkpoint 6.3 - Trade and Portfolio Guardrails - COMPLETE
 
 ## Completed
 
@@ -32,11 +32,11 @@ Checkpoint 6.2 - Position Sizing Engine - COMPLETE
 
 ## In progress
 
-- Final repository closure for Checkpoint 6.2.
+- Final repository closure for Checkpoint 6.3.
 
 ## Next checkpoint
 
-Checkpoint 6.3 - Trade and Portfolio Guardrails.
+Checkpoint 6.4 - Risk Evaluation Service.
 
 ## Blocked
 
@@ -1264,4 +1264,123 @@ position sizing without any broker communication or execution behavior.
 
 Next:
 
-### Checkpoint 6.3 - Trade and Portfolio Guardrails
+### Checkpoint 6.3 - Trade and Portfolio Guardrails - COMPLETE
+
+Completed:
+
+- pure deterministic trade and portfolio guardrail engine added
+- guardrails consume immutable `RiskEvaluationInput`
+- guardrails consume finalized deterministic position sizing
+- instrument tradability guard added
+- defensive positive-equity guard added
+- BUY and SELL stop-loss geometry is independently validated
+- broker minimum-quantity guard added
+- broker maximum-quantity guard added
+- broker quantity-step guard added
+- ambiguous or malformed quantity grids are independently blocked
+- maximum-open-position guard added
+- risk-per-trade monetary guard added
+- daily-loss guard added
+- projected daily-loss guard added
+- maximum-total-exposure guard added
+- normalized gross exposure data contract added
+- missing normalized exposure data blocks safely
+- multiple simultaneous violations are accumulated deterministically
+
+Exposure contract:
+
+- `gross_exposure_per_quantity` added to the broker-independent
+  instrument risk specification
+- exposure is represented in the account risk currency
+- exposure values use `Decimal`
+- exposure value must be positive and finite when supplied
+- `contract_size` does not imply or substitute for normalized exposure
+- the deterministic risk engine does not guess account-currency exposure
+- missing normalized exposure returns
+  `exposure_data_unavailable`
+
+Daily-loss behavior:
+
+- when the current daily loss has already reached the configured limit,
+  additional trades are blocked
+- when the proposed trade could push daily loss above the configured limit,
+  the trade is blocked
+- projected daily loss exactly equal to the configured limit is permitted
+  when the limit has not already been reached
+
+Exposure behavior:
+
+- proposed exposure is calculated from finalized quantity multiplied by
+  normalized `gross_exposure_per_quantity`
+- proposed exposure is added to current account gross exposure
+- projected exposure above the configured limit is blocked
+- projected exposure exactly equal to the configured limit is permitted
+- no broker-specific exposure formula is silently inferred
+
+Guardrail hardening:
+
+- monetary stop risk is independently reproduced from the current
+  `RiskEvaluationInput`
+- guardrails do not trust supplied sizing monetary diagnostics
+- current entry price, stop-loss price, tick size, and loss tick value
+  determine authoritative stop risk
+- stale or tampered sizing diagnostics return
+  `position_sizing_mismatch`
+- forged available sizing cannot bypass missing current tick-risk data
+- invalid stop geometry is blocked independently of position sizing
+- invalid quantity grids are blocked independently of position sizing
+- authoritative risk-per-trade decisions use current evaluation data
+- authoritative daily-loss decisions use current evaluation data
+- finalized quantity remains subject to broker min/max/step defenses
+
+Machine-readable guardrail reasons include:
+
+- `invalid_account_equity`
+- `invalid_stop_loss`
+- `risk_per_trade_exceeded`
+- `daily_loss_limit_reached`
+- `max_open_positions_reached`
+- `max_total_exposure_exceeded`
+- `exposure_data_unavailable`
+- `instrument_not_tradable`
+- `position_sizing_mismatch`
+- `invalid_quantity_grid`
+- `position_size_below_minimum`
+- `position_size_above_maximum`
+- `position_size_step_mismatch`
+
+Automated validation:
+
+- hardened guardrail suite: 27 passed
+- complete deterministic risk suite passed
+- full backend regression suite passed
+- full backend Ruff check passed
+- `git diff --check` passed
+- exact working-tree integrity check passed
+- required hardening fragments verified
+- known Starlette/httpx test warning remains non-blocking
+
+Safety validation:
+
+- risk domain contains no `MetaTrader5` dependency
+- risk domain contains no `order_send`
+- risk domain contains no `order_check`
+- risk domain contains no `mt5.login`
+- risk domain contains no `symbol_select`
+- risk domain contains no HTTP client mechanism
+- risk domain contains no broker client mechanism
+- guardrail evaluation performs no persistence
+- guardrail evaluation performs no order submission
+- guardrail evaluation performs no execution
+- backend remained stopped during Checkpoint 6.3 development
+- execution agent remained stopped during Checkpoint 6.3 development
+- execution remains disabled
+- live trading remains disabled
+
+Checkpoint 6.3 establishes deterministic portfolio safety boundaries
+around finalized position sizing and independently verifies the monetary
+risk information used for those decisions.
+
+Next:
+
+### Checkpoint 6.4 - Risk Evaluation Service
